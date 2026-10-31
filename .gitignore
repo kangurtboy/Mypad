@@ -1,0 +1,43 @@
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.cache
+*.pdb
+*.dll
+*.exe
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
+*.appinstaller
+
+# NuGet
+packages/
+*.nupkg
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.Local.json
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test output
+TestResults/
+coverage/
