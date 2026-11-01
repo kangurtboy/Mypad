@@ -4,13 +4,210 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:MyPad.App.Controls"
+    xmlns:viewModels="using:MyPad.App.ViewModels"
     mc:Ignorable="d"
     Title="MyPad">
 
-    <Grid>
-        <TextBlock Text="Welcome to MyPad"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Style="{StaticResource TitleTextBlockStyle}" />
+    <Grid x:Name="RootGrid"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- MenuBar -->
+        <MenuBar Grid.Row="0">
+            <MenuBarItem Title="File">
+                <MenuFlyoutItem Text="New Tab"
+                                Command="{x:Bind ViewModel.NewTabCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="N" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Close Tab"
+                                Command="{x:Bind ViewModel.CloseTabCommand}"
+                                CommandParameter="{x:Bind ViewModel.SelectedTab, Mode=OneWay}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="W" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Exit"
+                                Click="OnExitClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F4" Modifiers="Menu" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+            </MenuBarItem>
+
+            <MenuBarItem Title="Edit">
+                <MenuFlyoutItem Text="Undo"
+                                Click="OnUndoClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Z" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Redo"
+                                Click="OnRedoClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Y" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Cut"
+                                Click="OnCutClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="X" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Copy"
+                                Click="OnCopyClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="C" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Paste"
+                                Click="OnPasteClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="V" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Select All"
+                                Click="OnSelectAllClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="A" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+            </MenuBarItem>
+
+            <MenuBarItem Title="View">
+                <MenuFlyoutItem Text="Next Tab"
+                                Command="{x:Bind ViewModel.NextTabCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Tab" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Previous Tab"
+                                Command="{x:Bind ViewModel.PreviousTabCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Tab" Modifiers="Control,Shift" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Zoom In"
+                                Command="{x:Bind ViewModel.ZoomInCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Add" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Zoom Out"
+                                Command="{x:Bind ViewModel.ZoomOutCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Subtract" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Reset Zoom"
+                                Command="{x:Bind ViewModel.ResetZoomCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Number0" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <ToggleMenuFlyoutItem Text="Word Wrap"
+                                      IsChecked="{x:Bind ViewModel.SelectedTab.IsWordWrapEnabled, Mode=OneWay}"
+                                      Command="{x:Bind ViewModel.ToggleWordWrapCommand}" />
+                <ToggleMenuFlyoutItem Text="Status Bar"
+                                      IsChecked="{x:Bind ViewModel.IsStatusBarVisible, Mode=OneWay}"
+                                      Command="{x:Bind ViewModel.ToggleStatusBarCommand}" />
+            </MenuBarItem>
+
+            <MenuBarItem Title="Theme">
+                <MenuFlyoutItem Text="System Default"
+                                Command="{x:Bind ViewModel.SetThemeCommand}"
+                                CommandParameter="System" />
+                <MenuFlyoutItem Text="Light Theme"
+                                Command="{x:Bind ViewModel.SetThemeCommand}"
+                                CommandParameter="Light" />
+                <MenuFlyoutItem Text="Dark Theme"
+                                Command="{x:Bind ViewModel.SetThemeCommand}"
+                                CommandParameter="Dark" />
+            </MenuBarItem>
+
+            <MenuBarItem Title="Help">
+                <MenuFlyoutItem Text="About MyPad"
+                                Click="OnAboutClick" />
+            </MenuBarItem>
+        </MenuBar>
+
+        <!-- TabView -->
+        <TabView Grid.Row="1"
+                 x:Name="DocTabView"
+                 TabItemsSource="{x:Bind ViewModel.Tabs}"
+                 SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}"
+                 AddTabButtonClick="OnAddTabButtonClick"
+                 TabCloseRequested="OnTabCloseRequested"
+                 IsAddTabButtonVisible="True">
+            <TabView.TabItemTemplate>
+                <DataTemplate x:DataType="viewModels:DocumentTabViewModel">
+                    <TabViewItem Header="{x:Bind HeaderTitle, Mode=OneWay}"
+                                 IconSource="{x:Null}" />
+                </DataTemplate>
+            </TabView.TabItemTemplate>
+        </TabView>
+
+        <!-- Active Editor Content -->
+        <Grid Grid.Row="2">
+            <controls:EditorHost x:Name="ActiveEditor"
+                                 DataContext="{x:Bind ViewModel.SelectedTab, Mode=OneWay}"
+                                 Visibility="{x:Bind BoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
+
+            <TextBlock Text="No Open Document"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       Visibility="{x:Bind InvertedBoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
+        </Grid>
+
+        <!-- StatusBar -->
+        <Border Grid.Row="3"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="16,4,16,4"
+                Visibility="{x:Bind BoolToVisibility(ViewModel.IsStatusBarVisible), Mode=OneWay}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{x:Bind ViewModel.SelectedTab.FileName, Mode=OneWay}"
+                           VerticalAlignment="Center"
+                           FontSize="12"
+                           Opacity="0.7" />
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="20">
+                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.PositionDisplayName, Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.ZoomDisplayName, Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.LineEndingDisplayName, Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.EncodingName, Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               FontSize="12" />
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

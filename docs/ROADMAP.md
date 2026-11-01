@@ -16,12 +16,12 @@ Status legend: `NOT STARTED`, `IN PROGRESS`, `BLOCKED`, `DONE`.
 Exit criteria: a reproducible build and evidence-backed editor decision.
 
 ## Phase 1 — UI foundation
-- [ ] Main window and menu.
-- [ ] Tab strip.
-- [ ] Editor host.
-- [ ] Status bar.
-- [ ] App theme switching.
-- [ ] Keyboard navigation.
+- [x] Main window and menu.
+- [x] Tab strip.
+- [x] Editor host.
+- [x] Status bar.
+- [x] App theme switching.
+- [x] Keyboard navigation.
 
 ## Phase 2 — Core editor
 - [ ] Text input and selection.

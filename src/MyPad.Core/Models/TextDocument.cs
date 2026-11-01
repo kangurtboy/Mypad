@@ -37,6 +37,8 @@ public class TextDocument
 
     public double VerticalScrollOffset { get; set; }
 
+    public int ZoomLevel { get; set; } = 100;
+
     public static TextDocument CreateNew(string title = "Untitled", DocumentKind kind = DocumentKind.PlainText)
     {
         return new TextDocument
