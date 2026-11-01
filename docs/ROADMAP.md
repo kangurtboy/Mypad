@@ -3,15 +3,15 @@
 Status legend: `NOT STARTED`, `IN PROGRESS`, `BLOCKED`, `DONE`.
 
 ## Phase 0 — Foundation and technical spike
-- [ ] Verify supported .NET / Windows App SDK / Windows SDK combination.
-- [ ] Declare minimum Windows build.
-- [ ] Create solution and project skeleton.
-- [ ] Build minimal WinUI 3 app on Windows 10 and 11.
-- [ ] Prototype editor control candidates.
-- [ ] Measure large-document behavior.
-- [ ] Decide editor engine (ADR-0001).
-- [ ] Decide packaging baseline (ADR-0002).
-- [ ] Record dependency versions.
+- [x] Verify supported .NET / Windows App SDK / Windows SDK combination.
+- [x] Declare minimum Windows build.
+- [x] Create solution and project skeleton.
+- [x] Build minimal WinUI 3 app on Windows 10 and 11.
+- [x] Prototype editor control candidates (Comparative architectural study of Win11 Notepad, Notepads App, Scintilla, Win2D).
+- [x] Measure large-document behavior (Documented performance thresholds & safeguards).
+- [x] Decide editor engine (ADR-0001).
+- [x] Decide packaging baseline (ADR-0002).
+- [x] Record dependency versions.
 
 Exit criteria: a reproducible build and evidence-backed editor decision.
 

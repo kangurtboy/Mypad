@@ -1,21 +1,22 @@
 # ADR-0002: Packaging Strategy
 
-- Status: Proposed
-- Date: 2026-10-31
+- Status: Accepted
+- Date: 2026-11-01
 
 ## Context
-MyPad must provide both MSIX and a conventional EXE installer. WinUI 3 packaging and unpackaged deployment have different runtime/dependency considerations.
+MyPad must provide both a conventional standalone EXE / installer and MSIX packaging for Windows 10 and Windows 11.
 
 ## Decision
-Support both distribution forms, but defer exact packaging configuration until the selected Windows App SDK and deployment model are validated.
+Configure `MyPad.App` with `<WindowsPackageType>None</WindowsPackageType>` as the core development and standalone deployment baseline:
+1. **Unpackaged (Standard EXE):**
+   - Direct execution via `MyPad.App.exe`.
+   - Allows portable mode (writing configuration locally or to `%LocalAppData%`).
+   - Standard Windows installer (Inno Setup / WiX).
+2. **Packaged (MSIX):**
+   - Supported via Windows App SDK single-project MSIX or Windows Application Packaging Project for Store distribution.
 
-## Required validation
-- Packaged MSIX install/upgrade/uninstall.
-- Unpackaged EXE install and launch.
-- Runtime/framework dependency handling.
-- File associations.
-- Windows 10 and Windows 11 compatibility.
-- User data preservation on uninstall.
+Platform-specific storage and path resolution are abstracted behind `ISettingsService` and `IRecoveryService` in `MyPad.Core`, ensuring zero hardcoded dependencies on packaging models.
 
 ## Consequences
-Avoid packaging-specific assumptions in Core. Keep app data locations and installer integration behind appropriate platform services.
+- Fast local F5 debug cycle without requiring MSIX developer mode certificates.
+- Seamless compatibility with both portable and packaged distributions.

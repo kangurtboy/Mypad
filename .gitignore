@@ -20,6 +20,7 @@ obj/
 # NuGet
 packages/
 *.nupkg
+.local-packages/
 
 # Local settings and secrets
 .env

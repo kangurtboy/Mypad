@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MyPad.App/MyPad.App.csproj" />
+    <Project Path="src/MyPad.Core/MyPad.Core.csproj" />
+    <Project Path="src/MyPad.Infrastructure/MyPad.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MyPad.Core.Tests/MyPad.Core.Tests.csproj" />
+    <Project Path="tests/MyPad.Infrastructure.Tests/MyPad.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>
