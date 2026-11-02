@@ -1,26 +1,38 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using MyPad.App.Common;
+using MyPad.App.Services;
 using MyPad.Core.Enums;
+using MyPad.Core.Interfaces;
 
 namespace MyPad.App.ViewModels;
 
 /// <summary>
-/// Root ViewModel for MainWindow.
+/// Root ViewModel for MainWindow managing tabs, file operations, and editor state.
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
+    private readonly IDocumentFileService _documentFileService;
+    private readonly IFileDialogService? _fileDialogService;
+
     private DocumentTabViewModel? _selectedTab;
     private bool _isStatusBarVisible = true;
     private ElementTheme _appTheme = ElementTheme.Default;
     private int _untitledCounter = 1;
 
-    public MainViewModel()
+    public MainViewModel(IDocumentFileService? documentFileService = null, IFileDialogService? fileDialogService = null)
     {
+        _documentFileService = documentFileService ?? AppServices.DocumentFileService;
+        _fileDialogService = fileDialogService;
+
         Tabs = new ObservableCollection<DocumentTabViewModel>();
 
         NewTabCommand = new RelayCommand(() => CreateNewTab());
-        CloseTabCommand = new RelayCommand<DocumentTabViewModel>(CloseTab);
+        OpenCommand = new AsyncRelayCommand(OpenFileAsync);
+        SaveCommand = new AsyncRelayCommand(SaveCurrentFileAsync, () => SelectedTab is not null);
+        SaveAsCommand = new AsyncRelayCommand(SaveCurrentFileAsAsync, () => SelectedTab is not null);
+        CloseTabCommand = new AsyncRelayCommand<DocumentTabViewModel>(CloseTabAsync);
+
         ZoomInCommand = new RelayCommand(ZoomIn, () => SelectedTab is not null);
         ZoomOutCommand = new RelayCommand(ZoomOut, () => SelectedTab is not null);
         ResetZoomCommand = new RelayCommand(ResetZoom, () => SelectedTab is not null);
@@ -29,8 +41,10 @@ public sealed class MainViewModel : ObservableObject
         SetThemeCommand = new RelayCommand<string>(SetTheme);
         NextTabCommand = new RelayCommand(SelectNextTab, () => Tabs.Count > 1);
         PreviousTabCommand = new RelayCommand(SelectPreviousTab, () => Tabs.Count > 1);
+        SetLineEndingCommand = new RelayCommand<string>(SetLineEnding, _ => SelectedTab is not null);
+        SetEncodingCommand = new RelayCommand<string>(SetEncoding, _ => SelectedTab is not null);
 
-        // Create the initial tab
+        // Create initial blank tab
         CreateNewTab();
     }
 
@@ -44,10 +58,14 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _selectedTab, value))
             {
                 OnPropertyChanged(nameof(HasSelectedTab));
+                SaveCommand.RaiseCanExecuteChanged();
+                SaveAsCommand.RaiseCanExecuteChanged();
                 ZoomInCommand.RaiseCanExecuteChanged();
                 ZoomOutCommand.RaiseCanExecuteChanged();
                 ResetZoomCommand.RaiseCanExecuteChanged();
                 ToggleWordWrapCommand.RaiseCanExecuteChanged();
+                SetLineEndingCommand.RaiseCanExecuteChanged();
+                SetEncodingCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -67,7 +85,10 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public RelayCommand NewTabCommand { get; }
-    public RelayCommand<DocumentTabViewModel> CloseTabCommand { get; }
+    public AsyncRelayCommand OpenCommand { get; }
+    public AsyncRelayCommand SaveCommand { get; }
+    public AsyncRelayCommand SaveAsCommand { get; }
+    public AsyncRelayCommand<DocumentTabViewModel> CloseTabCommand { get; }
     public RelayCommand ZoomInCommand { get; }
     public RelayCommand ZoomOutCommand { get; }
     public RelayCommand ResetZoomCommand { get; }
@@ -76,6 +97,8 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand<string> SetThemeCommand { get; }
     public RelayCommand NextTabCommand { get; }
     public RelayCommand PreviousTabCommand { get; }
+    public RelayCommand<string> SetLineEndingCommand { get; }
+    public RelayCommand<string> SetEncodingCommand { get; }
 
     public DocumentTabViewModel CreateNewTab()
     {
@@ -95,16 +118,113 @@ public sealed class MainViewModel : ObservableObject
         return tab;
     }
 
-    public void CloseTab(DocumentTabViewModel? tab)
+    public async Task OpenFileAsync()
     {
-        if (tab is null)
+        if (_fileDialogService is null)
         {
-            tab = SelectedTab;
+            return;
         }
 
+        var path = await _fileDialogService.PickOpenFileAsync();
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        // Check if file is already open
+        var existing = Tabs.FirstOrDefault(t =>
+            string.Equals(t.FilePath, path, StringComparison.OrdinalIgnoreCase));
+
+        if (existing is not null)
+        {
+            SelectedTab = existing;
+            return;
+        }
+
+        var doc = await _documentFileService.OpenAsync(path);
+
+        // If current tab is pristine, load into it
+        if (SelectedTab is not null &&
+            string.IsNullOrEmpty(SelectedTab.FilePath) &&
+            string.IsNullOrEmpty(SelectedTab.Content) &&
+            !SelectedTab.IsModified)
+        {
+            SelectedTab.LoadFromDocument(doc);
+        }
+        else
+        {
+            var tab = new DocumentTabViewModel(doc);
+            Tabs.Add(tab);
+            SelectedTab = tab;
+            NextTabCommand.RaiseCanExecuteChanged();
+            PreviousTabCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public async Task<bool> SaveCurrentFileAsync()
+    {
+        if (SelectedTab is null)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(SelectedTab.FilePath))
+        {
+            return await SaveCurrentFileAsAsync();
+        }
+
+        var doc = SelectedTab.ToDomainModel();
+        await _documentFileService.SaveAsync(doc, SelectedTab.FilePath);
+        SelectedTab.MarkSaved(SelectedTab.FilePath);
+        return true;
+    }
+
+    public async Task<bool> SaveCurrentFileAsAsync()
+    {
+        if (SelectedTab is null || _fileDialogService is null)
+        {
+            return false;
+        }
+
+        var suggestedName = string.IsNullOrEmpty(SelectedTab.FileName) ? "Untitled.txt" : SelectedTab.FileName;
+        var destination = await _fileDialogService.PickSaveFileAsync(suggestedName);
+
+        if (string.IsNullOrWhiteSpace(destination))
+        {
+            return false;
+        }
+
+        var doc = SelectedTab.ToDomainModel();
+        await _documentFileService.SaveAsync(doc, destination);
+        SelectedTab.MarkSaved(destination);
+        return true;
+    }
+
+    public async Task CloseTabAsync(DocumentTabViewModel? tab)
+    {
+        tab ??= SelectedTab;
         if (tab is null || !Tabs.Contains(tab))
         {
             return;
+        }
+
+        if (tab.IsModified && _fileDialogService is not null)
+        {
+            var choice = await _fileDialogService.PromptUnsavedChangesAsync(tab.FileName);
+            if (choice == UnsavedChangesResult.Cancel)
+            {
+                return;
+            }
+
+            if (choice == UnsavedChangesResult.Save)
+            {
+                SelectedTab = tab;
+                var saved = await SaveCurrentFileAsync();
+                if (!saved)
+                {
+                    return; // user canceled the save dialog
+                }
+            }
         }
 
         var index = Tabs.IndexOf(tab);
@@ -121,6 +241,30 @@ public sealed class MainViewModel : ObservableObject
             var nextIndex = Math.Min(index, Tabs.Count - 1);
             SelectedTab = Tabs[nextIndex];
         }
+    }
+
+    public void SelectNextTab()
+    {
+        if (Tabs.Count <= 1 || SelectedTab is null)
+        {
+            return;
+        }
+
+        var currentIndex = Tabs.IndexOf(SelectedTab);
+        var nextIndex = (currentIndex + 1) % Tabs.Count;
+        SelectedTab = Tabs[nextIndex];
+    }
+
+    public void SelectPreviousTab()
+    {
+        if (Tabs.Count <= 1 || SelectedTab is null)
+        {
+            return;
+        }
+
+        var currentIndex = Tabs.IndexOf(SelectedTab);
+        var prevIndex = (currentIndex - 1 + Tabs.Count) % Tabs.Count;
+        SelectedTab = Tabs[prevIndex];
     }
 
     private void ZoomIn()
@@ -170,27 +314,31 @@ public sealed class MainViewModel : ObservableObject
         };
     }
 
-    public void SelectNextTab()
+    private void SetLineEnding(string? mode)
     {
-        if (Tabs.Count <= 1 || SelectedTab is null)
+        if (SelectedTab is null || string.IsNullOrWhiteSpace(mode))
         {
             return;
         }
 
-        var currentIndex = Tabs.IndexOf(SelectedTab);
-        var nextIndex = (currentIndex + 1) % Tabs.Count;
-        SelectedTab = Tabs[nextIndex];
+        SelectedTab.LineEnding = mode.ToUpperInvariant() switch
+        {
+            "CRLF" => LineEndingMode.Crlf,
+            "LF" => LineEndingMode.Lf,
+            "CR" => LineEndingMode.Cr,
+            _ => LineEndingMode.Crlf
+        };
+        SelectedTab.IsModified = true;
     }
 
-    public void SelectPreviousTab()
+    private void SetEncoding(string? encoding)
     {
-        if (Tabs.Count <= 1 || SelectedTab is null)
+        if (SelectedTab is null || string.IsNullOrWhiteSpace(encoding))
         {
             return;
         }
 
-        var currentIndex = Tabs.IndexOf(SelectedTab);
-        var prevIndex = (currentIndex - 1 + Tabs.Count) % Tabs.Count;
-        SelectedTab = Tabs[prevIndex];
+        SelectedTab.EncodingName = encoding;
+        SelectedTab.IsModified = true;
     }
 }

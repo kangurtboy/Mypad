@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using MyPad.App.Services;
 using MyPad.App.ViewModels;
 
 namespace MyPad.App.Views.MainWindow;
@@ -15,7 +16,13 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        ViewModel = new MainViewModel();
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        var fileDialogService = new Services.FileDialogService(
+            () => hwnd,
+            () => (Content as FrameworkElement)?.XamlRoot);
+
+        ViewModel = new MainViewModel(AppServices.DocumentFileService, fileDialogService);
 
         AppWindow.Title = "MyPad";
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
@@ -88,6 +95,16 @@ public sealed partial class MainWindow : Window
     private void OnSelectAllClick(object sender, RoutedEventArgs e)
     {
         ActiveEditor.SelectAll();
+    }
+
+    private void OnFindClick(object sender, RoutedEventArgs e)
+    {
+        FindBar.ShowFind();
+    }
+
+    private void OnReplaceMenuClick(object sender, RoutedEventArgs e)
+    {
+        FindBar.ShowReplace();
     }
 
     private async void OnAboutClick(object sender, RoutedEventArgs e)

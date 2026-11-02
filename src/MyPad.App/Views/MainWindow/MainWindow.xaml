@@ -27,6 +27,25 @@
                         <KeyboardAccelerator Key="N" Modifiers="Control" />
                     </MenuFlyoutItem.KeyboardAccelerators>
                 </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Open..."
+                                Command="{x:Bind ViewModel.OpenCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="O" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Save"
+                                Command="{x:Bind ViewModel.SaveCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Save As..."
+                                Command="{x:Bind ViewModel.SaveAsCommand}">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
                 <MenuFlyoutItem Text="Close Tab"
                                 Command="{x:Bind ViewModel.CloseTabCommand}"
                                 CommandParameter="{x:Bind ViewModel.SelectedTab, Mode=OneWay}">
@@ -80,6 +99,19 @@
                                 Click="OnSelectAllClick">
                     <MenuFlyoutItem.KeyboardAccelerators>
                         <KeyboardAccelerator Key="A" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem Text="Find..."
+                                Click="OnFindClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="F" Modifiers="Control" />
+                    </MenuFlyoutItem.KeyboardAccelerators>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem Text="Replace..."
+                                Click="OnReplaceMenuClick">
+                    <MenuFlyoutItem.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="H" Modifiers="Control" />
                     </MenuFlyoutItem.KeyboardAccelerators>
                 </MenuFlyoutItem>
             </MenuBarItem>
@@ -165,6 +197,9 @@
                                  DataContext="{x:Bind ViewModel.SelectedTab, Mode=OneWay}"
                                  Visibility="{x:Bind BoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
 
+            <controls:FindReplaceBar x:Name="FindBar"
+                                     TargetEditor="{x:Bind ActiveEditor, Mode=OneWay}" />
+
             <TextBlock Text="No Open Document"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
@@ -193,19 +228,58 @@
 
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
-                            Spacing="20">
+                            Spacing="12">
                     <TextBlock Text="{x:Bind ViewModel.SelectedTab.PositionDisplayName, Mode=OneWay}"
                                VerticalAlignment="Center"
                                FontSize="12" />
                     <TextBlock Text="{x:Bind ViewModel.SelectedTab.ZoomDisplayName, Mode=OneWay}"
                                VerticalAlignment="Center"
                                FontSize="12" />
-                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.LineEndingDisplayName, Mode=OneWay}"
-                               VerticalAlignment="Center"
-                               FontSize="12" />
-                    <TextBlock Text="{x:Bind ViewModel.SelectedTab.EncodingName, Mode=OneWay}"
-                               VerticalAlignment="Center"
-                               FontSize="12" />
+
+                    <!-- Line Ending Menu -->
+                    <DropDownButton Content="{x:Bind ViewModel.SelectedTab.LineEndingDisplayName, Mode=OneWay}"
+                                    FontSize="12"
+                                    Padding="8,2,8,2"
+                                    BorderThickness="0"
+                                    Background="Transparent">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Windows (CRLF)"
+                                                Command="{x:Bind ViewModel.SetLineEndingCommand}"
+                                                CommandParameter="CRLF" />
+                                <MenuFlyoutItem Text="Unix (LF)"
+                                                Command="{x:Bind ViewModel.SetLineEndingCommand}"
+                                                CommandParameter="LF" />
+                                <MenuFlyoutItem Text="Macintosh (CR)"
+                                                Command="{x:Bind ViewModel.SetLineEndingCommand}"
+                                                CommandParameter="CR" />
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+
+                    <!-- Encoding Menu -->
+                    <DropDownButton Content="{x:Bind ViewModel.SelectedTab.EncodingName, Mode=OneWay}"
+                                    FontSize="12"
+                                    Padding="8,2,8,2"
+                                    BorderThickness="0"
+                                    Background="Transparent">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="UTF-8"
+                                                Command="{x:Bind ViewModel.SetEncodingCommand}"
+                                                CommandParameter="UTF-8" />
+                                <MenuFlyoutItem Text="UTF-16 LE"
+                                                Command="{x:Bind ViewModel.SetEncodingCommand}"
+                                                CommandParameter="UTF-16" />
+                                <MenuFlyoutItem Text="UTF-16 BE"
+                                                Command="{x:Bind ViewModel.SetEncodingCommand}"
+                                                CommandParameter="UTF-16BE" />
+                                <MenuFlyoutItem Text="ANSI (Windows-1252)"
+                                                Command="{x:Bind ViewModel.SetEncodingCommand}"
+                                                CommandParameter="windows-1252" />
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
                 </StackPanel>
             </Grid>
         </Border>

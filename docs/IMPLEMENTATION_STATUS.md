@@ -1,9 +1,9 @@
 # Implementation Status
 
-**Current stage:** Phase 2 — Core editor  
-**Last updated:** 2026-11-01
+**Current stage:** Phase 3 — Tabs and session  
+**Last updated:** 2026-11-02
 
-This repository contains the architecture, core domain models, infrastructure services, and test suite. Phase 0 (Foundation and technical spike) and Phase 1 (UI Foundation) are completed. Implementation of the core editor file operations and editing pipelines (Phase 2) is ready to begin.
+This repository contains the architecture, core domain models, infrastructure services, and test suite. Phase 0 (Foundation), Phase 1 (UI Foundation), and Phase 2 (Core Editor) are completed. Implementation of multi-window, tab reordering, and session persistence/restore (Phase 3) is next.
 
 ## Completed
 - [x] Product name and scope established.
@@ -26,8 +26,14 @@ This repository contains the architecture, core domain models, infrastructure se
   - Dynamic status bar showing Ln/Col, zoom percentage, line endings (CRLF/LF/CR), and encoding.
   - App theme switching (System, Light, Dark).
   - Keyboard navigation for tabs (Ctrl+Tab, Ctrl+Shift+Tab) and editing operations.
+- [x] Phase 2 Core Editor:
+  - FileOpenPicker and FileSavePicker integrated with Window Native HWND interop.
+  - Safe atomic file opening, saving, and Save As using `DocumentFileService`.
+  - Unsaved changes confirmation dialog before closing dirty tabs.
+  - Dynamic line endings switching (CRLF, LF, CR) and encoding switching (UTF-8, UTF-16, ANSI) with interactive dropdown flyouts in the status bar.
+  - Full Find and Replace floating panel (`FindReplaceBar`) with Ctrl+F / Ctrl+H, next/prev matching, match case, replace, and atomic replace-all.
 
 ## Pending
-- [ ] Phase 2 — Core editor (File open/save/save as, encoding conversion, find/replace dialog).
+- [ ] Phase 3 — Tabs and session (Tab reordering, tab context menus, session snapshot persistence and recovery restore).
 
 Update this file honestly after each milestone.

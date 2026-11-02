@@ -81,6 +81,8 @@ public sealed partial class EditorHost : UserControl
         }
     }
 
+    public RichEditBox EditBoxControl => EditBox;
+
     public void Undo() => EditBox.Document.Undo();
     public void Redo() => EditBox.Document.Redo();
     public void Cut() => EditBox.Document.Selection.Cut();
@@ -102,6 +104,18 @@ public sealed partial class EditorHost : UserControl
                 break;
             case nameof(DocumentTabViewModel.ZoomLevel):
                 ApplyZoom(vm.ZoomLevel);
+                break;
+            case nameof(DocumentTabViewModel.Content):
+                _isUpdatingInternally = true;
+                try
+                {
+                    EditBox.Document.SetText(TextSetOptions.None, vm.Content ?? string.Empty);
+                    UpdateCaretPosition();
+                }
+                finally
+                {
+                    _isUpdatingInternally = false;
+                }
                 break;
         }
     }

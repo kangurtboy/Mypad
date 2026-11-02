@@ -24,13 +24,13 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 - [x] Keyboard navigation.
 
 ## Phase 2 — Core editor
-- [ ] Text input and selection.
-- [ ] Undo/redo and clipboard.
-- [ ] Open/save/save as.
-- [ ] Encoding and line endings.
-- [ ] Find/replace.
-- [ ] Word wrap and zoom.
-- [ ] Line/column status.
+- [x] Text input and selection.
+- [x] Undo/redo and clipboard.
+- [x] Open/save/save as.
+- [x] Encoding and line endings.
+- [x] Find/replace.
+- [x] Word wrap and zoom.
+- [x] Line/column status.
 
 ## Phase 3 — Tabs and session
 - [ ] Multiple tabs.

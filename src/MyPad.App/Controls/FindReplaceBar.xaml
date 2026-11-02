@@ -1,0 +1,118 @@
+<UserControl
+    x:Class="MyPad.App.Controls.FindReplaceBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="8"
+            Margin="0,8,16,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top">
+        <StackPanel Spacing="6" Width="360">
+            <!-- Find Row -->
+            <Grid ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="FindTextBox"
+                         Grid.Column="0"
+                         PlaceholderText="Find..."
+                         TextChanged="OnFindTextChanged"
+                         KeyDown="OnFindKeyDown" />
+
+                <ToggleButton x:Name="MatchCaseButton"
+                              Grid.Column="1"
+                              ToolTipService.ToolTip="Match Case (Alt+C)"
+                              Click="OnMatchCaseClick"
+                              Width="32"
+                              Padding="0">
+                    <TextBlock Text="Aa" FontSize="12" FontWeight="SemiBold" />
+                </ToggleButton>
+
+                <Button x:Name="PrevButton"
+                        Grid.Column="2"
+                        ToolTipService.ToolTip="Previous Match (Shift+F3)"
+                        Click="OnFindPrevClick"
+                        Width="32"
+                        Padding="0">
+                    <FontIcon Glyph="&#xE70E;" FontSize="12" />
+                </Button>
+
+                <Button x:Name="NextButton"
+                        Grid.Column="3"
+                        ToolTipService.ToolTip="Next Match (F3 or Enter)"
+                        Click="OnFindNextClick"
+                        Width="32"
+                        Padding="0">
+                    <FontIcon Glyph="&#xE70D;" FontSize="12" />
+                </Button>
+
+                <ToggleButton x:Name="ToggleReplaceButton"
+                              Grid.Column="4"
+                              ToolTipService.ToolTip="Toggle Replace Mode"
+                              Click="OnToggleReplaceClick"
+                              Width="32"
+                              Padding="0">
+                    <FontIcon Glyph="&#xE70B;" FontSize="12" />
+                </ToggleButton>
+
+                <TextBlock x:Name="MatchCountText"
+                           Grid.Column="5"
+                           VerticalAlignment="Center"
+                           Margin="4,0,4,0"
+                           FontSize="11"
+                           Opacity="0.7" />
+
+                <Button x:Name="CloseButton"
+                        Grid.Column="6"
+                        ToolTipService.ToolTip="Close (Esc)"
+                        Click="OnCloseClick"
+                        Width="32"
+                        Padding="0">
+                    <FontIcon Glyph="&#xE711;" FontSize="12" />
+                </Button>
+            </Grid>
+
+            <!-- Replace Row (Collapsible) -->
+            <Grid x:Name="ReplaceRow"
+                  ColumnSpacing="4"
+                  Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox x:Name="ReplaceTextBox"
+                         Grid.Column="0"
+                         PlaceholderText="Replace with..."
+                         KeyDown="OnReplaceKeyDown" />
+
+                <Button x:Name="ReplaceButton"
+                        Grid.Column="1"
+                        Content="Replace"
+                        Click="OnReplaceClick"
+                        FontSize="12" />
+
+                <Button x:Name="ReplaceAllButton"
+                        Grid.Column="2"
+                        Content="All"
+                        Click="OnReplaceAllClick"
+                        FontSize="12" />
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

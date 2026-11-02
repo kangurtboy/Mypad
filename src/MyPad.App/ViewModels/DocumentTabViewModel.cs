@@ -170,6 +170,38 @@ public sealed class DocumentTabViewModel : ObservableObject
         set => SetProperty(ref _isWordWrapEnabled, value);
     }
 
+    public void LoadFromDocument(TextDocument doc)
+    {
+        _filePath = doc.FilePath;
+        _fileName = doc.Title;
+        _content = doc.Content;
+        _lineEnding = doc.LineEnding;
+        _encodingName = doc.Encoding?.WebName?.ToUpperInvariant() ?? "UTF-8";
+        _isModified = false;
+        Kind = doc.Kind;
+
+        OnPropertyChanged(nameof(FilePath));
+        OnPropertyChanged(nameof(FileName));
+        OnPropertyChanged(nameof(HeaderTitle));
+        OnPropertyChanged(nameof(Content));
+        OnPropertyChanged(nameof(LineEnding));
+        OnPropertyChanged(nameof(LineEndingDisplayName));
+        OnPropertyChanged(nameof(EncodingName));
+        OnPropertyChanged(nameof(IsModified));
+    }
+
+    public void MarkSaved(string savedPath)
+    {
+        _filePath = savedPath;
+        _fileName = System.IO.Path.GetFileName(savedPath);
+        _isModified = false;
+
+        OnPropertyChanged(nameof(FilePath));
+        OnPropertyChanged(nameof(FileName));
+        OnPropertyChanged(nameof(HeaderTitle));
+        OnPropertyChanged(nameof(IsModified));
+    }
+
     public TextDocument ToDomainModel()
     {
         Encoding enc;

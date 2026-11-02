@@ -48,6 +48,62 @@ public class DocumentFileServiceTests
     }
 
     [TestMethod]
+    public async Task SaveAsync_ConvertsLineEndingsToLf_WhenConfigured()
+    {
+        string filePath = Path.Combine(_testDir, "test_lf.txt");
+        var doc = new TextDocument
+        {
+            FilePath = filePath,
+            Title = "test_lf.txt",
+            Content = "First\r\nSecond\r\nThird",
+            LineEnding = LineEndingMode.Lf,
+            Encoding = System.Text.Encoding.UTF8
+        };
+
+        await _fileService.SaveAsync(doc);
+
+        byte[] bytes = await File.ReadAllBytesAsync(filePath);
+        string text = System.Text.Encoding.UTF8.GetString(bytes);
+
+        Assert.AreEqual("First\nSecond\nThird", text);
+        Assert.DoesNotContain("\r", text);
+    }
+
+    [TestMethod]
+    public async Task SaveAsync_WithNewDestinationPath_SavesCorrectly()
+    {
+        string destPath = Path.Combine(_testDir, "subfolder", "destination.txt");
+        var doc = new TextDocument
+        {
+            Title = "destination.txt",
+            Content = "Hello from destination",
+            LineEnding = LineEndingMode.Crlf,
+            Encoding = System.Text.Encoding.UTF8
+        };
+
+        await _fileService.SaveAsync(doc, destPath);
+
+        Assert.IsTrue(File.Exists(destPath));
+        string content = await File.ReadAllTextAsync(destPath);
+        Assert.AreEqual("Hello from destination", content);
+    }
+
+    [TestMethod]
+    public async Task OpenAsync_NonExistentFile_ThrowsFileNotFound()
+    {
+        string nonExistent = Path.Combine(_testDir, "does_not_exist.txt");
+        try
+        {
+            await _fileService.OpenAsync(nonExistent);
+            Assert.Fail("Expected FileNotFoundException was not thrown.");
+        }
+        catch (FileNotFoundException)
+        {
+            // Expected
+        }
+    }
+
+    [TestMethod]
     public async Task CheckForExternalChanges_DetectsExternalFileModifications()
     {
         string filePath = Path.Combine(_testDir, "external_test.txt");
