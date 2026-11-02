@@ -27,6 +27,11 @@ public sealed partial class MainWindow : Window
         AppWindow.Title = "MyPad";
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
 
+        // Seamless integrated title bar
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        ApplyTitleBarTheme(ViewModel.AppTheme);
+
         // Enable Mica backdrop when supported
         try
         {
@@ -44,9 +49,35 @@ public sealed partial class MainWindow : Window
                 if (Content is FrameworkElement root)
                 {
                     root.RequestedTheme = ViewModel.AppTheme;
+                    ApplyTitleBarTheme(ViewModel.AppTheme);
                 }
             }
         };
+    }
+
+    private void ApplyTitleBarTheme(ElementTheme theme)
+    {
+        if (Microsoft.UI.Windowing.AppWindowTitleBar.IsCustomizationSupported())
+        {
+            var titleBar = AppWindow.TitleBar;
+            titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+            titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
+
+            if (theme == ElementTheme.Light)
+            {
+                titleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
+                titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
+                titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(30, 0, 0, 0);
+                titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(60, 0, 0, 0);
+            }
+            else
+            {
+                titleBar.ButtonForegroundColor = Microsoft.UI.Colors.White;
+                titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.White;
+                titleBar.ButtonHoverBackgroundColor = Windows.UI.Color.FromArgb(30, 255, 255, 255);
+                titleBar.ButtonPressedBackgroundColor = Windows.UI.Color.FromArgb(60, 255, 255, 255);
+            }
+        }
     }
 
     private void OnAddTabButtonClick(TabView sender, object args)

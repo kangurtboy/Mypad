@@ -32,6 +32,7 @@ public sealed partial class EditorHost : UserControl
         };
 
         EditBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnEditBoxKeyDown), true);
+        EditBox.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(OnPointerWheelChanged), true);
     }
 
     public DocumentTabViewModel? TabViewModel
@@ -205,6 +206,29 @@ public sealed partial class EditorHost : UserControl
 
         TabViewModel.CaretLine = line;
         TabViewModel.CaretColumn = col;
+    }
+
+    private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
+    {
+        var isCtrl = (Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control)
+            & Windows.UI.Core.CoreVirtualKeyStates.Down) == Windows.UI.Core.CoreVirtualKeyStates.Down;
+
+        if (isCtrl && TabViewModel is not null)
+        {
+            var pointerPoint = e.GetCurrentPoint(EditBox);
+            int mouseDelta = pointerPoint.Properties.MouseWheelDelta;
+
+            if (mouseDelta > 0)
+            {
+                TabViewModel.ZoomLevel += 10;
+                e.Handled = true;
+            }
+            else if (mouseDelta < 0)
+            {
+                TabViewModel.ZoomLevel -= 10;
+                e.Handled = true;
+            }
+        }
     }
 
     private async void OnEditBoxKeyDown(object sender, KeyRoutedEventArgs e)
