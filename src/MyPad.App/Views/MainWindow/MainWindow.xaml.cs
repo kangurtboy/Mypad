@@ -24,13 +24,13 @@ public sealed partial class MainWindow : Window
 
         ViewModel = new MainViewModel(AppServices.DocumentFileService, fileDialogService);
 
-        AppWindow.Title = "MyPad";
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
 
-        // Seamless integrated title bar
+        // Seamless integrated title bar (only AppTitleBar acts as the window drag/caption area)
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         ApplyTitleBarTheme(ViewModel.AppTheme);
+        UpdateWindowTitle();
 
         // Enable Mica backdrop when supported
         try
@@ -52,7 +52,35 @@ public sealed partial class MainWindow : Window
                     ApplyTitleBarTheme(ViewModel.AppTheme);
                 }
             }
+            else if (e.PropertyName == nameof(MainViewModel.SelectedTab))
+            {
+                UpdateWindowTitle();
+                if (ViewModel.SelectedTab is not null)
+                {
+                    ViewModel.SelectedTab.PropertyChanged += (st, se) =>
+                    {
+                        if (se.PropertyName == nameof(DocumentTabViewModel.FileName) ||
+                            se.PropertyName == nameof(DocumentTabViewModel.HeaderTitle))
+                        {
+                            UpdateWindowTitle();
+                        }
+                    };
+                }
+            }
         };
+    }
+
+    private void UpdateWindowTitle()
+    {
+        var title = ViewModel.SelectedTab is not null
+            ? $"{ViewModel.SelectedTab.FileName} - MyPad"
+            : "MyPad";
+
+        if (TitleTextBlock is not null)
+        {
+            TitleTextBlock.Text = title;
+        }
+        AppWindow.Title = title;
     }
 
     private void ApplyTitleBarTheme(ElementTheme theme)
