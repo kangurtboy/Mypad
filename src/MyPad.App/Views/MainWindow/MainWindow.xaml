@@ -61,6 +61,8 @@
                  SelectedItem="{x:Bind ViewModel.SelectedTab, Mode=TwoWay}"
                  AddTabButtonClick="OnAddTabButtonClick"
                  TabCloseRequested="OnTabCloseRequested"
+                 CanReorderTabs="True"
+                 CanDragTabs="True"
                  IsAddTabButtonVisible="True"
                  VerticalAlignment="Center">
             <TabView.TabStripHeader>
@@ -80,6 +82,12 @@
                                                     Command="{x:Bind ViewModel.NewTabCommand}">
                                         <MenuFlyoutItem.KeyboardAccelerators>
                                             <KeyboardAccelerator Key="N" Modifiers="Control" />
+                                        </MenuFlyoutItem.KeyboardAccelerators>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="New Window"
+                                                    Command="{x:Bind ViewModel.NewWindowCommand}">
+                                        <MenuFlyoutItem.KeyboardAccelerators>
+                                            <KeyboardAccelerator Key="N" Modifiers="Control,Shift" />
                                         </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
                                     <MenuFlyoutItem Text="Open..."
@@ -221,7 +229,23 @@
             <TabView.TabItemTemplate>
                 <DataTemplate x:DataType="viewModels:DocumentTabViewModel">
                     <TabViewItem Header="{x:Bind HeaderTitle, Mode=OneWay}"
-                                 IconSource="{x:Null}" />
+                                 IconSource="{x:Null}">
+                        <TabViewItem.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Close"
+                                                Click="OnTabContextCloseClick" />
+                                <MenuFlyoutItem Text="Close Others"
+                                                Click="OnTabContextCloseOthersClick" />
+                                <MenuFlyoutItem Text="Close to the Right"
+                                                Click="OnTabContextCloseRightClick" />
+                                <MenuFlyoutSeparator />
+                                <MenuFlyoutItem Text="Copy Full Path"
+                                                Click="OnTabContextCopyPathClick" />
+                                <MenuFlyoutItem Text="Open Containing Folder"
+                                                Click="OnTabContextOpenFolderClick" />
+                            </MenuFlyout>
+                        </TabViewItem.ContextFlyout>
+                    </TabViewItem>
                 </DataTemplate>
             </TabView.TabItemTemplate>
         </TabView>

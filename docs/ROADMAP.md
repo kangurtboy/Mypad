@@ -33,12 +33,12 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 - [x] 2.7. Line/column status.
 
 ## Phase 3 — Tabs and session
-- [ ] 3.1. Multiple tabs.
-- [ ] 3.2. Reorder and context menu.
-- [ ] 3.3. Dirty-state tracking.
-- [ ] 3.4. Session persistence.
-- [ ] 3.5. Session restore.
-- [ ] 3.6. Multiple windows.
+- [x] 3.1. Multiple tabs.
+- [x] 3.2. Reorder and context menu.
+- [x] 3.3. Dirty-state tracking.
+- [x] 3.4. Session persistence.
+- [x] 3.5. Session restore.
+- [x] 3.6. Multiple windows.
 
 ## Phase 4 — Data protection
 - [ ] 4.1. Recovery snapshots.

@@ -1,9 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using MyPad.App.Common;
 using MyPad.App.Services;
 using MyPad.Core.Enums;
 using MyPad.Core.Interfaces;
+using MyPad.Core.Models;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace MyPad.App.ViewModels;
 
@@ -14,16 +17,21 @@ public sealed class MainViewModel : ObservableObject
 {
     private readonly IDocumentFileService _documentFileService;
     private readonly IFileDialogService? _fileDialogService;
+    private readonly ISessionService _sessionService;
 
     private DocumentTabViewModel? _selectedTab;
     private bool _isStatusBarVisible = true;
     private ElementTheme _appTheme = ElementTheme.Default;
     private int _untitledCounter = 1;
 
-    public MainViewModel(IDocumentFileService? documentFileService = null, IFileDialogService? fileDialogService = null)
+    public MainViewModel(
+        IDocumentFileService? documentFileService = null,
+        IFileDialogService? fileDialogService = null,
+        ISessionService? sessionService = null)
     {
         _documentFileService = documentFileService ?? AppServices.DocumentFileService;
         _fileDialogService = fileDialogService;
+        _sessionService = sessionService ?? AppServices.SessionService;
 
         Tabs = new ObservableCollection<DocumentTabViewModel>();
 
@@ -32,6 +40,10 @@ public sealed class MainViewModel : ObservableObject
         SaveCommand = new AsyncRelayCommand(SaveCurrentFileAsync, () => SelectedTab is not null);
         SaveAsCommand = new AsyncRelayCommand(SaveCurrentFileAsAsync, () => SelectedTab is not null);
         CloseTabCommand = new AsyncRelayCommand<DocumentTabViewModel>(CloseTabAsync);
+        CloseOtherTabsCommand = new AsyncRelayCommand<DocumentTabViewModel>(CloseOtherTabsAsync, t => Tabs.Count > 1);
+        CloseTabsToTheRightCommand = new AsyncRelayCommand<DocumentTabViewModel>(CloseTabsToTheRightAsync);
+        CopyFilePathCommand = new RelayCommand<DocumentTabViewModel>(CopyFilePath, t => !string.IsNullOrEmpty(t?.FilePath));
+        OpenContainingFolderCommand = new RelayCommand<DocumentTabViewModel>(OpenContainingFolder, t => !string.IsNullOrEmpty(t?.FilePath));
 
         ZoomInCommand = new RelayCommand(ZoomIn, () => SelectedTab is not null);
         ZoomOutCommand = new RelayCommand(ZoomOut, () => SelectedTab is not null);
@@ -43,8 +55,9 @@ public sealed class MainViewModel : ObservableObject
         PreviousTabCommand = new RelayCommand(SelectPreviousTab, () => Tabs.Count > 1);
         SetLineEndingCommand = new RelayCommand<string>(SetLineEnding, _ => SelectedTab is not null);
         SetEncodingCommand = new RelayCommand<string>(SetEncoding, _ => SelectedTab is not null);
+        NewWindowCommand = new RelayCommand(RequestNewWindow);
 
-        // Create initial blank tab
+        // Initial blank tab (can be replaced by session restore)
         CreateNewTab();
     }
 
@@ -66,6 +79,8 @@ public sealed class MainViewModel : ObservableObject
                 ToggleWordWrapCommand.RaiseCanExecuteChanged();
                 SetLineEndingCommand.RaiseCanExecuteChanged();
                 SetEncodingCommand.RaiseCanExecuteChanged();
+                CopyFilePathCommand.RaiseCanExecuteChanged();
+                OpenContainingFolderCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -85,10 +100,16 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public RelayCommand NewTabCommand { get; }
+    public RelayCommand NewWindowCommand { get; }
     public AsyncRelayCommand OpenCommand { get; }
     public AsyncRelayCommand SaveCommand { get; }
     public AsyncRelayCommand SaveAsCommand { get; }
     public AsyncRelayCommand<DocumentTabViewModel> CloseTabCommand { get; }
+    public AsyncRelayCommand<DocumentTabViewModel> CloseOtherTabsCommand { get; }
+    public AsyncRelayCommand<DocumentTabViewModel> CloseTabsToTheRightCommand { get; }
+    public RelayCommand<DocumentTabViewModel> CopyFilePathCommand { get; }
+    public RelayCommand<DocumentTabViewModel> OpenContainingFolderCommand { get; }
+
     public RelayCommand ZoomInCommand { get; }
     public RelayCommand ZoomOutCommand { get; }
     public RelayCommand ResetZoomCommand { get; }
@@ -99,6 +120,13 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand PreviousTabCommand { get; }
     public RelayCommand<string> SetLineEndingCommand { get; }
     public RelayCommand<string> SetEncodingCommand { get; }
+
+    public event EventHandler? NewWindowRequested;
+
+    private void RequestNewWindow()
+    {
+        NewWindowRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     public DocumentTabViewModel CreateNewTab()
     {
@@ -113,8 +141,7 @@ public sealed class MainViewModel : ObservableObject
 
         Tabs.Add(tab);
         SelectedTab = tab;
-        NextTabCommand.RaiseCanExecuteChanged();
-        PreviousTabCommand.RaiseCanExecuteChanged();
+        UpdateCommandsState();
         return tab;
     }
 
@@ -156,8 +183,7 @@ public sealed class MainViewModel : ObservableObject
             var tab = new DocumentTabViewModel(doc);
             Tabs.Add(tab);
             SelectedTab = tab;
-            NextTabCommand.RaiseCanExecuteChanged();
-            PreviousTabCommand.RaiseCanExecuteChanged();
+            UpdateCommandsState();
         }
     }
 
@@ -222,15 +248,14 @@ public sealed class MainViewModel : ObservableObject
                 var saved = await SaveCurrentFileAsync();
                 if (!saved)
                 {
-                    return; // user canceled the save dialog
+                    return;
                 }
             }
         }
 
         var index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
-        NextTabCommand.RaiseCanExecuteChanged();
-        PreviousTabCommand.RaiseCanExecuteChanged();
+        UpdateCommandsState();
 
         if (Tabs.Count == 0)
         {
@@ -241,6 +266,125 @@ public sealed class MainViewModel : ObservableObject
             var nextIndex = Math.Min(index, Tabs.Count - 1);
             SelectedTab = Tabs[nextIndex];
         }
+    }
+
+    public async Task CloseOtherTabsAsync(DocumentTabViewModel? tab)
+    {
+        tab ??= SelectedTab;
+        if (tab is null) return;
+
+        var otherTabs = Tabs.Where(t => t != tab).ToList();
+        foreach (var other in otherTabs)
+        {
+            await CloseTabAsync(other);
+        }
+    }
+
+    public async Task CloseTabsToTheRightAsync(DocumentTabViewModel? tab)
+    {
+        tab ??= SelectedTab;
+        if (tab is null) return;
+
+        int index = Tabs.IndexOf(tab);
+        if (index < 0 || index >= Tabs.Count - 1) return;
+
+        var rightTabs = Tabs.Skip(index + 1).ToList();
+        foreach (var right in rightTabs)
+        {
+            await CloseTabAsync(right);
+        }
+    }
+
+    private void CopyFilePath(DocumentTabViewModel? tab)
+    {
+        tab ??= SelectedTab;
+        if (!string.IsNullOrEmpty(tab?.FilePath))
+        {
+            var package = new DataPackage();
+            package.SetText(tab.FilePath);
+            Clipboard.SetContent(package);
+        }
+    }
+
+    private void OpenContainingFolder(DocumentTabViewModel? tab)
+    {
+        tab ??= SelectedTab;
+        if (!string.IsNullOrEmpty(tab?.FilePath) && File.Exists(tab.FilePath))
+        {
+            try
+            {
+                Process.Start("explorer.exe", $"/select,\"{tab.FilePath}\"");
+            }
+            catch
+            {
+                // Fallback: open folder without selection
+                string? dir = Path.GetDirectoryName(tab.FilePath);
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                {
+                    Process.Start("explorer.exe", dir);
+                }
+            }
+        }
+    }
+
+    public async Task SaveSessionAsync()
+    {
+        var session = new SessionState
+        {
+            SelectedTabIndex = SelectedTab is not null ? Tabs.IndexOf(SelectedTab) : 0,
+            SavedAtUtc = DateTime.UtcNow
+        };
+
+        foreach (var tab in Tabs)
+        {
+            session.Tabs.Add(new SessionTabState
+            {
+                Id = tab.Id,
+                FilePath = tab.FilePath,
+                Title = tab.FileName,
+                Content = tab.Content,
+                IsModified = tab.IsModified,
+                LineEnding = tab.LineEnding,
+                EncodingName = tab.EncodingName,
+                CaretLine = tab.CaretLine,
+                CaretColumn = tab.CaretColumn,
+                ZoomLevel = tab.ZoomLevel
+            });
+        }
+
+        await _sessionService.SaveSessionAsync(session);
+    }
+
+    public async Task<bool> RestoreSessionAsync()
+    {
+        var session = await _sessionService.LoadSessionAsync();
+        if (session is null || session.Tabs.Count == 0)
+        {
+            return false;
+        }
+
+        Tabs.Clear();
+        foreach (var tabState in session.Tabs)
+        {
+            var tab = new DocumentTabViewModel
+            {
+                FilePath = tabState.FilePath,
+                FileName = tabState.Title,
+                Content = tabState.Content,
+                IsModified = tabState.IsModified,
+                LineEnding = tabState.LineEnding,
+                EncodingName = tabState.EncodingName,
+                CaretLine = tabState.CaretLine,
+                CaretColumn = tabState.CaretColumn,
+                ZoomLevel = tabState.ZoomLevel
+            };
+            Tabs.Add(tab);
+        }
+
+        int selectedIdx = Math.Clamp(session.SelectedTabIndex, 0, Tabs.Count - 1);
+        SelectedTab = Tabs[selectedIdx];
+        UpdateCommandsState();
+        return true;
     }
 
     public void SelectNextTab()
@@ -265,6 +409,14 @@ public sealed class MainViewModel : ObservableObject
         var currentIndex = Tabs.IndexOf(SelectedTab);
         var prevIndex = (currentIndex - 1 + Tabs.Count) % Tabs.Count;
         SelectedTab = Tabs[prevIndex];
+    }
+
+    private void UpdateCommandsState()
+    {
+        NextTabCommand.RaiseCanExecuteChanged();
+        PreviousTabCommand.RaiseCanExecuteChanged();
+        CloseOtherTabsCommand.RaiseCanExecuteChanged();
+        CloseTabsToTheRightCommand.RaiseCanExecuteChanged();
     }
 
     private void ZoomIn()

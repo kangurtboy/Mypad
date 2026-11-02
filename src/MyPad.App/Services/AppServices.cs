@@ -30,10 +30,14 @@ public static class AppServices
     private static readonly Lazy<IMarkdownRenderer> _markdownRenderer =
         new(() => new MarkdownRenderer());
 
+    private static readonly Lazy<ISessionService> _sessionService =
+        new(() => new MyPad.Infrastructure.Session.SessionService());
+
     public static IEncodingDetector EncodingDetector => _encodingDetector.Value;
     public static ILineEndingDetector LineEndingDetector => _lineEndingDetector.Value;
     public static IDocumentFileService DocumentFileService => _documentFileService.Value;
     public static ISettingsService SettingsService => _settingsService.Value;
     public static IRecoveryService RecoveryService => _recoveryService.Value;
     public static IMarkdownRenderer MarkdownRenderer => _markdownRenderer.Value;
+    public static ISessionService SessionService => _sessionService.Value;
 }

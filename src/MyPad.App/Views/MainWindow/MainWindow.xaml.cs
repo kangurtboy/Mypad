@@ -22,7 +22,7 @@ public sealed partial class MainWindow : Window
             () => hwnd,
             () => (Content as FrameworkElement)?.XamlRoot);
 
-        ViewModel = new MainViewModel(AppServices.DocumentFileService, fileDialogService);
+        ViewModel = new MainViewModel(AppServices.DocumentFileService, fileDialogService, AppServices.SessionService);
 
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
 
@@ -31,6 +31,29 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         ApplyTitleBarTheme(ViewModel.AppTheme);
         UpdateWindowTitle();
+
+        // Restore previous session if available
+        _ = ViewModel.RestoreSessionAsync();
+
+        // Handle opening new window (Ctrl+Shift+N)
+        ViewModel.NewWindowRequested += (s, e) =>
+        {
+            var newWindow = new MainWindow();
+            newWindow.Activate();
+        };
+
+        // Persist session state on close
+        Closed += async (s, e) =>
+        {
+            try
+            {
+                await ViewModel.SaveSessionAsync();
+            }
+            catch
+            {
+                // Ignore session save errors on shutdown
+            }
+        };
 
         // Enable Mica backdrop when supported
         try
@@ -118,6 +141,46 @@ public sealed partial class MainWindow : Window
         if (args.Item is DocumentTabViewModel tab)
         {
             ViewModel.CloseTabCommand.Execute(tab);
+        }
+    }
+
+    private void OnTabContextCloseClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is DocumentTabViewModel tab)
+        {
+            ViewModel.CloseTabCommand.Execute(tab);
+        }
+    }
+
+    private void OnTabContextCloseOthersClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is DocumentTabViewModel tab)
+        {
+            ViewModel.CloseOtherTabsCommand.Execute(tab);
+        }
+    }
+
+    private void OnTabContextCloseRightClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is DocumentTabViewModel tab)
+        {
+            ViewModel.CloseTabsToTheRightCommand.Execute(tab);
+        }
+    }
+
+    private void OnTabContextCopyPathClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is DocumentTabViewModel tab)
+        {
+            ViewModel.CopyFilePathCommand.Execute(tab);
+        }
+    }
+
+    private void OnTabContextOpenFolderClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is DocumentTabViewModel tab)
+        {
+            ViewModel.OpenContainingFolderCommand.Execute(tab);
         }
     }
 
