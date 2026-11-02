@@ -126,6 +126,11 @@ public sealed partial class EditorHost : UserControl
             text = text[..^1];
         }
 
+        if (string.Equals(text, TabViewModel.Content, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         _isUpdatingInternally = true;
         try
         {

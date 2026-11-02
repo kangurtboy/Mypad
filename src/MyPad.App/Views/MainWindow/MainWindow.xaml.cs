@@ -17,6 +17,9 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         ViewModel = new MainViewModel();
 
+        AppWindow.Title = "MyPad";
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
+
         // Enable Mica backdrop when supported
         try
         {
