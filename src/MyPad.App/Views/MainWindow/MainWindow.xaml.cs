@@ -55,14 +55,21 @@ public sealed partial class MainWindow : Window
             }
         };
 
-        // Enable Mica backdrop when supported
+        // Enable frosted glass Acrylic / Mica backdrop
         try
         {
-            SystemBackdrop = new MicaBackdrop();
+            SystemBackdrop = new DesktopAcrylicBackdrop();
         }
         catch
         {
-            // Graceful fallback for Windows 10
+            try
+            {
+                SystemBackdrop = new MicaBackdrop();
+            }
+            catch
+            {
+                // Graceful fallback for older systems
+            }
         }
 
         ViewModel.PropertyChanged += (s, e) =>
@@ -114,7 +121,14 @@ public sealed partial class MainWindow : Window
             titleBar.ButtonBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
             titleBar.ButtonInactiveBackgroundColor = Windows.UI.Color.FromArgb(0, 0, 0, 0);
 
-            if (theme == ElementTheme.Light)
+            bool isDark = theme switch
+            {
+                ElementTheme.Dark => true,
+                ElementTheme.Light => false,
+                _ => Application.Current.RequestedTheme == ApplicationTheme.Dark
+            };
+
+            if (!isDark)
             {
                 titleBar.ButtonForegroundColor = Microsoft.UI.Colors.Black;
                 titleBar.ButtonHoverForegroundColor = Microsoft.UI.Colors.Black;
