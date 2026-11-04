@@ -1,9 +1,9 @@
 # Implementation Status
 
-**Current stage:** Phase 6 — Themes  
+**Current stage:** Phase 7 — Polish  
 **Last updated:** 2026-11-04
 
-This repository contains the architecture, core domain models, infrastructure services, and test suite. Phase 0 (Foundation), Phase 1 (UI Foundation), Phase 2 (Core Editor), Phase 3 (Tabs and session), Phase 4 (Data protection), and Phase 5 (Markdown) are completed. Implementation of independent editor themes, custom theme JSON schema, and built-in palettes (Phase 6) is next.
+This repository contains the architecture, core domain models, infrastructure services, and test suite. Phases 0 through 6 are completed. Polish, Settings UI, recent files, and accessibility (Phase 7) is next.
 
 ## Completed
 - [x] Product name and scope established.
@@ -14,7 +14,7 @@ This repository contains the architecture, core domain models, infrastructure se
 - [x] Verify official Windows/.NET/Windows App SDK compatibility (.NET 8 LTS baseline on Windows 10 Build 19041+).
 - [x] Create solution and project files (`MyPad.slnx`, `MyPad.Core`, `MyPad.Infrastructure`, `MyPad.App`, test suites).
 - [x] Implement Core domain models, contracts, and Infrastructure services (atomic file writes, encoding and line-ending detection, safe Markdown rendering, session recovery storage).
-- [x] Automated unit tests implemented and passing (29/29 tests pass).
+- [x] Automated unit tests implemented and passing (35/35 tests pass).
 - [x] Build and restore the WinUI 3 starter app (`MyPad.App` compiles to `MyPad.App.exe` with 0 warnings and 0 errors).
 - [x] Complete editor-engine comparative architecture spike and trade-off analysis (Windows 11 Notepad RichEdit, Notepads App, Scintilla, Win2D Canvas).
 - [x] Accept ADR-0001 (Editor Engine: WinUI RichEditBox with Plain-Text Guard) and ADR-0002 (Packaging: Unpackaged baseline with MSIX support).
@@ -50,8 +50,14 @@ This repository contains the architecture, core domain models, infrastructure se
   - Live preview with debounced updates using `MarkdownPreviewPane`.
   - Resizable split view layout (`Editor Only`, `Split View`, `Preview Only`) toggleable via `Alt+P` or View menu.
   - Strict Content Security Policy (CSP) and blocked scripts on `WebView2`.
+- [x] Phase 6 Themes:
+  - Independent application theme and editor palette layers.
+  - Built-in palette catalog (Default Dark, One Dark, Dracula, Nord, Catppuccin Mocha, Monokai, Gruvbox Dark, Default Light, GitHub Light, Solarized Light, Catppuccin Latte, Gruvbox Light).
+  - Versioned Theme JSON Schema with validation (strict hex verification, 256 KB limit, no script execution).
+  - Transactional import/export via `ThemeService`.
+  - WCAG contrast ratio calculation.
 
 ## Pending
-- [ ] Phase 6 — Themes (Independent app and editor themes, palettes, JSON schema).
+- [ ] Phase 7 — Polish (Settings UI, recent files, focus mode, accessibility).
 
 Update this file honestly after each milestone.

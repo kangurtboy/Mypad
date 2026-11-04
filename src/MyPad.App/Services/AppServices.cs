@@ -36,6 +36,9 @@ public static class AppServices
     private static readonly Lazy<IBackupService> _backupService =
         new(() => new BackupService());
 
+    private static readonly Lazy<IThemeService> _themeService =
+        new(() => new MyPad.Infrastructure.Themes.ThemeService());
+
     public static IEncodingDetector EncodingDetector => _encodingDetector.Value;
     public static ILineEndingDetector LineEndingDetector => _lineEndingDetector.Value;
     public static IDocumentFileService DocumentFileService => _documentFileService.Value;
@@ -44,4 +47,5 @@ public static class AppServices
     public static IMarkdownRenderer MarkdownRenderer => _markdownRenderer.Value;
     public static ISessionService SessionService => _sessionService.Value;
     public static IBackupService BackupService => _backupService.Value;
+    public static IThemeService ThemeService => _themeService.Value;
 }

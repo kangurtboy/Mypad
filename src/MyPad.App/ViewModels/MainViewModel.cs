@@ -20,6 +20,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly ISessionService _sessionService;
     private readonly IRecoveryService _recoveryService;
     private readonly IBackupService _backupService;
+    private readonly IThemeService _themeService;
 
     private DocumentTabViewModel? _selectedTab;
     private bool _isStatusBarVisible = true;
@@ -33,13 +34,20 @@ public sealed class MainViewModel : ObservableObject
         IFileDialogService? fileDialogService = null,
         ISessionService? sessionService = null,
         IRecoveryService? recoveryService = null,
-        IBackupService? backupService = null)
+        IBackupService? backupService = null,
+        IThemeService? themeService = null)
     {
         _documentFileService = documentFileService ?? AppServices.DocumentFileService;
         _fileDialogService = fileDialogService;
         _sessionService = sessionService ?? AppServices.SessionService;
         _recoveryService = recoveryService ?? AppServices.RecoveryService;
         _backupService = backupService ?? AppServices.BackupService;
+        _themeService = themeService ?? AppServices.ThemeService;
+
+        _themeService.ThemeChanged += (s, theme) =>
+        {
+            OnPropertyChanged(nameof(CurrentEditorTheme));
+        };
 
         Tabs = new ObservableCollection<DocumentTabViewModel>();
 
@@ -62,6 +70,13 @@ public sealed class MainViewModel : ObservableObject
         TogglePreviewCommand = new RelayCommand(TogglePreview);
         SetViewModeCommand = new RelayCommand<string>(SetViewMode);
         SetThemeCommand = new RelayCommand<string>(SetTheme);
+        SetEditorPaletteCommand = new RelayCommand<string>(palette =>
+        {
+            if (!string.IsNullOrWhiteSpace(palette))
+            {
+                _themeService.SetEditorTheme(palette);
+            }
+        });
         NextTabCommand = new RelayCommand(SelectNextTab, () => Tabs.Count > 1);
         PreviousTabCommand = new RelayCommand(SelectPreviousTab, () => Tabs.Count > 1);
         SetLineEndingCommand = new RelayCommand<string>(SetLineEnding, _ => SelectedTab is not null);
@@ -152,6 +167,9 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _appTheme, value);
     }
 
+    public EditorTheme CurrentEditorTheme => _themeService.CurrentEditorTheme;
+    public IReadOnlyList<EditorTheme> AvailableEditorThemes => _themeService.GetAvailableEditorThemes();
+
     public RelayCommand NewTabCommand { get; }
     public RelayCommand NewWindowCommand { get; }
     public AsyncRelayCommand OpenCommand { get; }
@@ -176,6 +194,7 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand PreviousTabCommand { get; }
     public RelayCommand<string> SetLineEndingCommand { get; }
     public RelayCommand<string> SetEncodingCommand { get; }
+    public RelayCommand<string> SetEditorPaletteCommand { get; }
 
     public event EventHandler? NewWindowRequested;
 
@@ -693,6 +712,15 @@ public sealed class MainViewModel : ObservableObject
             "Dark" => ElementTheme.Dark,
             _ => ElementTheme.Default
         };
+
+        if (theme == "Light" && CurrentEditorTheme.Appearance == "dark")
+        {
+            _themeService.SetEditorTheme("Default Light");
+        }
+        else if (theme == "Dark" && CurrentEditorTheme.Appearance == "light")
+        {
+            _themeService.SetEditorTheme("Default Dark");
+        }
     }
 
     private void SetLineEnding(string? mode)

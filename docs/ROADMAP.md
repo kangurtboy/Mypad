@@ -57,11 +57,11 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 - [x] 5.6. Scroll synchronization.
 
 ## Phase 6 — Themes
-- [ ] 6.1. Independent app/editor themes.
-- [ ] 6.2. Built-in palettes.
-- [ ] 6.3. Theme JSON schema.
-- [ ] 6.4. Import/export.
-- [ ] 6.5. Theme validation and contrast review.
+- [x] 6.1. Independent app/editor themes.
+- [x] 6.2. Built-in palettes.
+- [x] 6.3. Theme JSON schema.
+- [x] 6.4. Import/export.
+- [x] 6.5. Theme validation and contrast review.
 
 ## Phase 7 — Polish
 - [ ] 7.1. Settings UI.

@@ -3,7 +3,10 @@ using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using MyPad.App.Services;
 using MyPad.App.ViewModels;
+using MyPad.Core.Models;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 
@@ -14,6 +17,13 @@ public sealed partial class EditorHost : UserControl
     private const double BaseFontSize = 14.0;
     private bool _isUpdatingInternally;
     private readonly DispatcherTimer _highlightTimer;
+
+    public static readonly DependencyProperty ThemeProperty =
+        DependencyProperty.Register(
+            nameof(Theme),
+            typeof(EditorTheme),
+            typeof(EditorHost),
+            new PropertyMetadata(null, OnThemeChanged));
 
     public static readonly DependencyProperty TabViewModelProperty =
         DependencyProperty.Register(
@@ -36,12 +46,60 @@ public sealed partial class EditorHost : UserControl
         EditBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnEditBoxKeyDown), true);
         EditBox.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(OnPointerWheelChanged), true);
 
+        Theme = AppServices.ThemeService.CurrentEditorTheme;
+        ApplyTheme(Theme);
+        AppServices.ThemeService.ThemeChanged += (s, theme) => ApplyTheme(theme);
+
         _highlightTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         _highlightTimer.Tick += (s, e) =>
         {
             _highlightTimer.Stop();
             HighlightMarkdownTokens();
         };
+    }
+
+    public EditorTheme? Theme
+    {
+        get => (EditorTheme?)GetValue(ThemeProperty);
+        set => SetValue(ThemeProperty, value);
+    }
+
+    private static void OnThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is EditorHost host && e.NewValue is EditorTheme theme)
+        {
+            host.ApplyTheme(theme);
+        }
+    }
+
+    public void ApplyTheme(EditorTheme? theme)
+    {
+        if (theme is null) return;
+
+        try
+        {
+            EditBox.Foreground = new SolidColorBrush(HexToColor(theme.Colors.Foreground));
+            EditBox.SelectionHighlightColor = new SolidColorBrush(HexToColor(theme.Colors.Selection));
+            HighlightMarkdownTokens();
+        }
+        catch { }
+    }
+
+    public static Windows.UI.Color HexToColor(string hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return Microsoft.UI.Colors.Transparent;
+        if (hex.StartsWith("#")) hex = hex[1..];
+        byte a = 255;
+        int idx = 0;
+        if (hex.Length == 8)
+        {
+            a = Convert.ToByte(hex[..2], 16);
+            idx = 2;
+        }
+        byte r = Convert.ToByte(hex.Substring(idx, 2), 16);
+        byte g = Convert.ToByte(hex.Substring(idx + 2, 2), 16);
+        byte b = Convert.ToByte(hex.Substring(idx + 4, 2), 16);
+        return Windows.UI.Color.FromArgb(a, r, g, b);
     }
 
     public DocumentTabViewModel? TabViewModel
@@ -286,12 +344,17 @@ public sealed partial class EditorHost : UserControl
             fullRange.CharacterFormat.Bold = FormatEffect.Off;
             fullRange.CharacterFormat.Italic = FormatEffect.Off;
 
+            var headingColor = Theme is not null ? HexToColor(Theme.Colors.Heading) : Windows.UI.Color.FromArgb(255, 78, 201, 176);
+            var boldColor = Theme is not null ? HexToColor(Theme.Colors.Keyword) : Windows.UI.Color.FromArgb(255, 86, 156, 214);
+            var codeColor = Theme is not null ? HexToColor(Theme.Colors.String) : Windows.UI.Color.FromArgb(255, 209, 154, 102);
+
             // Highlight Markdown Headers (# Header)
             var headerMatches = Regex.Matches(text, @"^(#{1,6}\s+.*)$", RegexOptions.Multiline);
             foreach (Match m in headerMatches)
             {
                 var r = doc.GetRange(m.Index, m.Index + m.Length);
                 r.CharacterFormat.Bold = FormatEffect.On;
+                r.CharacterFormat.ForegroundColor = headingColor;
             }
 
             // Highlight Bold (**text**)
@@ -300,6 +363,7 @@ public sealed partial class EditorHost : UserControl
             {
                 var r = doc.GetRange(m.Index, m.Index + m.Length);
                 r.CharacterFormat.Bold = FormatEffect.On;
+                r.CharacterFormat.ForegroundColor = boldColor;
             }
 
             // Highlight Inline Code (`code`)
@@ -307,7 +371,7 @@ public sealed partial class EditorHost : UserControl
             foreach (Match m in codeMatches)
             {
                 var r = doc.GetRange(m.Index, m.Index + m.Length);
-                r.CharacterFormat.ForegroundColor = Windows.UI.Color.FromArgb(255, 209, 154, 102);
+                r.CharacterFormat.ForegroundColor = codeColor;
             }
         }
         catch { }

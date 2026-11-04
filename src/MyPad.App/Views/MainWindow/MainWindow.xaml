@@ -231,15 +231,57 @@
                                 </MenuFlyoutSubItem>
 
                                 <MenuFlyoutSubItem Text="Theme">
-                                    <MenuFlyoutItem Text="System Default"
-                                                    Command="{x:Bind ViewModel.SetThemeCommand}"
-                                                    CommandParameter="System" />
-                                    <MenuFlyoutItem Text="Light Theme"
-                                                    Command="{x:Bind ViewModel.SetThemeCommand}"
-                                                    CommandParameter="Light" />
-                                    <MenuFlyoutItem Text="Dark Theme"
-                                                    Command="{x:Bind ViewModel.SetThemeCommand}"
-                                                    CommandParameter="Dark" />
+                                    <MenuFlyoutSubItem Text="App Theme">
+                                        <MenuFlyoutItem Text="System Default"
+                                                        Command="{x:Bind ViewModel.SetThemeCommand}"
+                                                        CommandParameter="System" />
+                                        <MenuFlyoutItem Text="Light Theme"
+                                                        Command="{x:Bind ViewModel.SetThemeCommand}"
+                                                        CommandParameter="Light" />
+                                        <MenuFlyoutItem Text="Dark Theme"
+                                                        Command="{x:Bind ViewModel.SetThemeCommand}"
+                                                        CommandParameter="Dark" />
+                                    </MenuFlyoutSubItem>
+
+                                    <MenuFlyoutSubItem Text="Editor Palette">
+                                        <MenuFlyoutItem Text="Default Dark"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Default Dark" />
+                                        <MenuFlyoutItem Text="One Dark"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="One Dark" />
+                                        <MenuFlyoutItem Text="Dracula"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Dracula" />
+                                        <MenuFlyoutItem Text="Nord"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Nord" />
+                                        <MenuFlyoutItem Text="Catppuccin Mocha"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Catppuccin Mocha" />
+                                        <MenuFlyoutItem Text="Monokai"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Monokai" />
+                                        <MenuFlyoutItem Text="Gruvbox Dark"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Gruvbox Dark" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem Text="Default Light"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Default Light" />
+                                        <MenuFlyoutItem Text="GitHub Light"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="GitHub Light" />
+                                        <MenuFlyoutItem Text="Solarized Light"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Solarized Light" />
+                                        <MenuFlyoutItem Text="Catppuccin Latte"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Catppuccin Latte" />
+                                        <MenuFlyoutItem Text="Gruvbox Light"
+                                                        Command="{x:Bind ViewModel.SetEditorPaletteCommand}"
+                                                        CommandParameter="Gruvbox Light" />
+                                    </MenuFlyoutSubItem>
                                 </MenuFlyoutSubItem>
 
                                 <MenuFlyoutSeparator />
