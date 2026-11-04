@@ -20,7 +20,9 @@
                      VerticalAlignment="Stretch"
                      SelectionChanged="OnSelectionChanged"
                      TextChanged="OnTextChanged"
-                     Loaded="OnEditBoxLoaded">
+                     Loaded="OnEditBoxLoaded"
+                     GotFocus="OnEditBoxGotFocus"
+                     LostFocus="OnEditBoxLostFocus">
             <RichEditBox.Resources>
                 <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
                 <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
@@ -33,5 +35,19 @@
                 <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
             </RichEditBox.Resources>
         </RichEditBox>
+
+        <!-- Smooth Animated Caret (Office 365 / Word style) -->
+        <Canvas x:Name="CaretCanvas" IsHitTestVisible="False">
+            <Border x:Name="SmoothCaret"
+                    Width="2"
+                    Height="18"
+                    Background="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    CornerRadius="1"
+                    Opacity="0">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="CaretTransform" X="0" Y="0" />
+                </Border.RenderTransform>
+            </Border>
+        </Canvas>
     </Grid>
 </UserControl>
