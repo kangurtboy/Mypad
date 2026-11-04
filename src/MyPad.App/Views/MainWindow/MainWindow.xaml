@@ -113,6 +113,9 @@
                                             <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
                                         </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
+                                    <ToggleMenuFlyoutItem Text="Auto-Save"
+                                                          IsChecked="{x:Bind ViewModel.IsAutosaveEnabled, Mode=OneWay}"
+                                                          Command="{x:Bind ViewModel.ToggleAutosaveCommand}" />
                                     <MenuFlyoutSeparator />
                                     <MenuFlyoutItem Text="Close Tab"
                                                     Command="{x:Bind ViewModel.CloseTabCommand}"

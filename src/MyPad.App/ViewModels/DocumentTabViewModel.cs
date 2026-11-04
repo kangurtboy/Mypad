@@ -43,6 +43,7 @@ public sealed class DocumentTabViewModel : ObservableObject
 
     public Guid Id { get; }
     public DocumentKind Kind { get; set; }
+    public string? FileFingerprint { get; set; }
 
     public string? FilePath
     {
@@ -179,6 +180,7 @@ public sealed class DocumentTabViewModel : ObservableObject
         _encodingName = doc.Encoding?.WebName?.ToUpperInvariant() ?? "UTF-8";
         _isModified = false;
         Kind = doc.Kind;
+        FileFingerprint = doc.FileFingerprint;
 
         OnPropertyChanged(nameof(FilePath));
         OnPropertyChanged(nameof(FileName));
@@ -190,11 +192,15 @@ public sealed class DocumentTabViewModel : ObservableObject
         OnPropertyChanged(nameof(IsModified));
     }
 
-    public void MarkSaved(string savedPath)
+    public void MarkSaved(string savedPath, string? fingerprint = null)
     {
         _filePath = savedPath;
         _fileName = System.IO.Path.GetFileName(savedPath);
         _isModified = false;
+        if (fingerprint is not null)
+        {
+            FileFingerprint = fingerprint;
+        }
 
         OnPropertyChanged(nameof(FilePath));
         OnPropertyChanged(nameof(FileName));
@@ -223,7 +229,8 @@ public sealed class DocumentTabViewModel : ObservableObject
             LineEnding = LineEnding,
             Encoding = enc,
             IsModified = IsModified,
-            Kind = Kind
+            Kind = Kind,
+            FileFingerprint = FileFingerprint
         };
     }
 }

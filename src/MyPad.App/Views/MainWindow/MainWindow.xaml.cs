@@ -22,7 +22,12 @@ public sealed partial class MainWindow : Window
             () => hwnd,
             () => (Content as FrameworkElement)?.XamlRoot);
 
-        ViewModel = new MainViewModel(AppServices.DocumentFileService, fileDialogService, AppServices.SessionService);
+        ViewModel = new MainViewModel(
+            AppServices.DocumentFileService,
+            fileDialogService,
+            AppServices.SessionService,
+            AppServices.RecoveryService,
+            AppServices.BackupService);
 
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
 
@@ -32,8 +37,17 @@ public sealed partial class MainWindow : Window
         ApplyTitleBarTheme(ViewModel.AppTheme);
         UpdateWindowTitle();
 
-        // Restore previous session if available
-        _ = ViewModel.RestoreSessionAsync();
+        // Restore previous session and check for crash recovery
+        _ = InitializeSessionAndRecoveryAsync();
+
+        // Monitor external file changes when window is focused
+        Activated += async (s, e) =>
+        {
+            if (e.WindowActivationState != WindowActivationState.Deactivated)
+            {
+                await ViewModel.CheckExternalChangesForSelectedTabAsync();
+            }
+        };
 
         // Handle opening new window (Ctrl+Shift+N)
         ViewModel.NewWindowRequested += (s, e) =>
@@ -98,6 +112,12 @@ public sealed partial class MainWindow : Window
                 }
             }
         };
+    }
+
+    private async Task InitializeSessionAndRecoveryAsync()
+    {
+        await ViewModel.RestoreSessionAsync();
+        await ViewModel.CheckForCrashRecoveryAsync();
     }
 
     private void UpdateWindowTitle()

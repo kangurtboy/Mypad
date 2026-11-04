@@ -33,6 +33,9 @@ public static class AppServices
     private static readonly Lazy<ISessionService> _sessionService =
         new(() => new MyPad.Infrastructure.Session.SessionService());
 
+    private static readonly Lazy<IBackupService> _backupService =
+        new(() => new BackupService());
+
     public static IEncodingDetector EncodingDetector => _encodingDetector.Value;
     public static ILineEndingDetector LineEndingDetector => _lineEndingDetector.Value;
     public static IDocumentFileService DocumentFileService => _documentFileService.Value;
@@ -40,4 +43,5 @@ public static class AppServices
     public static IRecoveryService RecoveryService => _recoveryService.Value;
     public static IMarkdownRenderer MarkdownRenderer => _markdownRenderer.Value;
     public static ISessionService SessionService => _sessionService.Value;
+    public static IBackupService BackupService => _backupService.Value;
 }

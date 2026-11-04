@@ -11,27 +11,35 @@ using Windows.ApplicationModel.DataTransfer;
 namespace MyPad.App.ViewModels;
 
 /// <summary>
-/// Root ViewModel for MainWindow managing tabs, file operations, and editor state.
+/// Root ViewModel for MainWindow managing tabs, file operations, recovery snapshots, and editor state.
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
     private readonly IDocumentFileService _documentFileService;
     private readonly IFileDialogService? _fileDialogService;
     private readonly ISessionService _sessionService;
+    private readonly IRecoveryService _recoveryService;
+    private readonly IBackupService _backupService;
 
     private DocumentTabViewModel? _selectedTab;
     private bool _isStatusBarVisible = true;
+    private bool _isAutosaveEnabled;
     private ElementTheme _appTheme = ElementTheme.Default;
     private int _untitledCounter = 1;
+    private readonly DispatcherTimer _protectionTimer;
 
     public MainViewModel(
         IDocumentFileService? documentFileService = null,
         IFileDialogService? fileDialogService = null,
-        ISessionService? sessionService = null)
+        ISessionService? sessionService = null,
+        IRecoveryService? recoveryService = null,
+        IBackupService? backupService = null)
     {
         _documentFileService = documentFileService ?? AppServices.DocumentFileService;
         _fileDialogService = fileDialogService;
         _sessionService = sessionService ?? AppServices.SessionService;
+        _recoveryService = recoveryService ?? AppServices.RecoveryService;
+        _backupService = backupService ?? AppServices.BackupService;
 
         Tabs = new ObservableCollection<DocumentTabViewModel>();
 
@@ -50,6 +58,7 @@ public sealed class MainViewModel : ObservableObject
         ResetZoomCommand = new RelayCommand(ResetZoom, () => SelectedTab is not null);
         ToggleWordWrapCommand = new RelayCommand(ToggleWordWrap, () => SelectedTab is not null);
         ToggleStatusBarCommand = new RelayCommand(ToggleStatusBar);
+        ToggleAutosaveCommand = new RelayCommand(ToggleAutosave);
         SetThemeCommand = new RelayCommand<string>(SetTheme);
         NextTabCommand = new RelayCommand(SelectNextTab, () => Tabs.Count > 1);
         PreviousTabCommand = new RelayCommand(SelectPreviousTab, () => Tabs.Count > 1);
@@ -57,7 +66,12 @@ public sealed class MainViewModel : ObservableObject
         SetEncodingCommand = new RelayCommand<string>(SetEncoding, _ => SelectedTab is not null);
         NewWindowCommand = new RelayCommand(RequestNewWindow);
 
-        // Initial blank tab (can be replaced by session restore)
+        // Data protection timer: takes recovery snapshots of dirty tabs & executes autosave if enabled
+        _protectionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+        _protectionTimer.Tick += async (s, e) => await OnProtectionTimerTickAsync();
+        _protectionTimer.Start();
+
+        // Initial blank tab (can be replaced by session restore or crash recovery)
         CreateNewTab();
     }
 
@@ -81,6 +95,8 @@ public sealed class MainViewModel : ObservableObject
                 SetEncodingCommand.RaiseCanExecuteChanged();
                 CopyFilePathCommand.RaiseCanExecuteChanged();
                 OpenContainingFolderCommand.RaiseCanExecuteChanged();
+
+                _ = CheckExternalChangesForSelectedTabAsync();
             }
         }
     }
@@ -91,6 +107,12 @@ public sealed class MainViewModel : ObservableObject
     {
         get => _isStatusBarVisible;
         set => SetProperty(ref _isStatusBarVisible, value);
+    }
+
+    public bool IsAutosaveEnabled
+    {
+        get => _isAutosaveEnabled;
+        set => SetProperty(ref _isAutosaveEnabled, value);
     }
 
     public ElementTheme AppTheme
@@ -115,6 +137,7 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ResetZoomCommand { get; }
     public RelayCommand ToggleWordWrapCommand { get; }
     public RelayCommand ToggleStatusBarCommand { get; }
+    public RelayCommand ToggleAutosaveCommand { get; }
     public RelayCommand<string> SetThemeCommand { get; }
     public RelayCommand NextTabCommand { get; }
     public RelayCommand PreviousTabCommand { get; }
@@ -200,8 +223,28 @@ public sealed class MainViewModel : ObservableObject
         }
 
         var doc = SelectedTab.ToDomainModel();
+
+        // 1. Safe write
         await _documentFileService.SaveAsync(doc, SelectedTab.FilePath);
-        SelectedTab.MarkSaved(SelectedTab.FilePath);
+
+        // 2. Backup creation & retention pruning
+        try
+        {
+            await _backupService.CreateBackupAsync(SelectedTab.FilePath);
+            await _backupService.PruneBackupsAsync(SelectedTab.FilePath, maxBackups: 5);
+        }
+        catch { }
+
+        // 3. Mark tab clean and update fingerprint
+        SelectedTab.MarkSaved(doc.FilePath!, doc.FileFingerprint);
+
+        // 4. Remove recovery snapshot on clean save
+        try
+        {
+            await _recoveryService.DeleteSnapshotAsync(SelectedTab.Id);
+        }
+        catch { }
+
         return true;
     }
 
@@ -222,7 +265,22 @@ public sealed class MainViewModel : ObservableObject
 
         var doc = SelectedTab.ToDomainModel();
         await _documentFileService.SaveAsync(doc, destination);
-        SelectedTab.MarkSaved(destination);
+
+        try
+        {
+            await _backupService.CreateBackupAsync(destination);
+            await _backupService.PruneBackupsAsync(destination, maxBackups: 5);
+        }
+        catch { }
+
+        SelectedTab.MarkSaved(doc.FilePath!, doc.FileFingerprint);
+
+        try
+        {
+            await _recoveryService.DeleteSnapshotAsync(SelectedTab.Id);
+        }
+        catch { }
+
         return true;
     }
 
@@ -252,6 +310,13 @@ public sealed class MainViewModel : ObservableObject
                 }
             }
         }
+
+        // Clean up recovery snapshot
+        try
+        {
+            await _recoveryService.DeleteSnapshotAsync(tab.Id);
+        }
+        catch { }
 
         var index = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
@@ -317,7 +382,6 @@ public sealed class MainViewModel : ObservableObject
             }
             catch
             {
-                // Fallback: open folder without selection
                 string? dir = Path.GetDirectoryName(tab.FilePath);
                 if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
                 {
@@ -387,6 +451,113 @@ public sealed class MainViewModel : ObservableObject
         return true;
     }
 
+    public async Task CheckForCrashRecoveryAsync()
+    {
+        try
+        {
+            var snapshots = await _recoveryService.LoadAllSnapshotsAsync();
+            if (snapshots.Count == 0 || _fileDialogService is null)
+            {
+                return;
+            }
+
+            bool shouldRecover = await _fileDialogService.PromptCrashRecoveryAsync(snapshots.Count);
+            if (shouldRecover)
+            {
+                foreach (var snapshot in snapshots)
+                {
+                    var tab = new DocumentTabViewModel
+                    {
+                        FilePath = snapshot.OriginalFilePath,
+                        FileName = snapshot.Title,
+                        Content = snapshot.Content,
+                        IsModified = true,
+                        LineEnding = snapshot.LineEnding,
+                        EncodingName = snapshot.EncodingWebName,
+                        Kind = snapshot.Kind
+                    };
+                    Tabs.Add(tab);
+                    SelectedTab = tab;
+                }
+                UpdateCommandsState();
+            }
+            else
+            {
+                await _recoveryService.ClearAllSnapshotsAsync();
+            }
+        }
+        catch { }
+    }
+
+    public async Task CheckExternalChangesForSelectedTabAsync()
+    {
+        if (SelectedTab is null || string.IsNullOrEmpty(SelectedTab.FilePath) || !File.Exists(SelectedTab.FilePath))
+        {
+            return;
+        }
+
+        var doc = SelectedTab.ToDomainModel();
+        if (_documentFileService.CheckForExternalChanges(doc))
+        {
+            if (!SelectedTab.IsModified)
+            {
+                // Silently reload if no unsaved local changes
+                var updated = await _documentFileService.OpenAsync(SelectedTab.FilePath);
+                SelectedTab.LoadFromDocument(updated);
+            }
+            else if (_fileDialogService is not null)
+            {
+                var choice = await _fileDialogService.PromptExternalChangeConflictAsync(SelectedTab.FileName);
+                if (choice == ExternalChangeChoice.Reload)
+                {
+                    var updated = await _documentFileService.OpenAsync(SelectedTab.FilePath);
+                    SelectedTab.LoadFromDocument(updated);
+                }
+                else
+                {
+                    // Keep local: update fingerprint to current file state to avoid repeated prompts
+                    var fileInfo = new FileInfo(SelectedTab.FilePath);
+                    SelectedTab.FileFingerprint = $"{fileInfo.LastWriteTimeUtc.Ticks}_{fileInfo.Length}";
+                }
+            }
+        }
+    }
+
+    private async Task OnProtectionTimerTickAsync()
+    {
+        // 1. Take recovery snapshots for all dirty tabs
+        foreach (var tab in Tabs)
+        {
+            if (tab.IsModified && !string.IsNullOrEmpty(tab.Content))
+            {
+                try
+                {
+                    await _recoveryService.SaveSnapshotAsync(tab.ToDomainModel());
+                }
+                catch { }
+            }
+        }
+
+        // 2. Autosave if enabled
+        if (IsAutosaveEnabled)
+        {
+            foreach (var tab in Tabs)
+            {
+                if (tab.IsModified && !string.IsNullOrEmpty(tab.FilePath))
+                {
+                    try
+                    {
+                        var doc = tab.ToDomainModel();
+                        await _documentFileService.SaveAsync(doc, tab.FilePath);
+                        tab.MarkSaved(doc.FilePath!, doc.FileFingerprint);
+                        await _recoveryService.DeleteSnapshotAsync(tab.Id);
+                    }
+                    catch { }
+                }
+            }
+        }
+    }
+
     public void SelectNextTab()
     {
         if (Tabs.Count <= 1 || SelectedTab is null)
@@ -454,6 +625,11 @@ public sealed class MainViewModel : ObservableObject
     private void ToggleStatusBar()
     {
         IsStatusBarVisible = !IsStatusBarVisible;
+    }
+
+    private void ToggleAutosave()
+    {
+        IsAutosaveEnabled = !IsAutosaveEnabled;
     }
 
     private void SetTheme(string? theme)

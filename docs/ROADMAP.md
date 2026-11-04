@@ -41,12 +41,12 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 - [x] 3.6. Multiple windows.
 
 ## Phase 4 — Data protection
-- [ ] 4.1. Recovery snapshots.
-- [ ] 4.2. Crash recovery prompt.
-- [ ] 4.3. Optional file autosave.
-- [ ] 4.4. External-change detection.
-- [ ] 4.5. Safe writes.
-- [ ] 4.6. Backup retention.
+- [x] 4.1. Recovery snapshots.
+- [x] 4.2. Crash recovery prompt.
+- [x] 4.3. Optional file autosave.
+- [x] 4.4. External-change detection.
+- [x] 4.5. Safe writes.
+- [x] 4.6. Backup retention.
 
 ## Phase 5 — Markdown
 - [ ] 5.1. Markdig integration.

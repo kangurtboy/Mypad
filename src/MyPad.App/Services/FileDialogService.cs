@@ -80,4 +80,50 @@ public sealed class FileDialogService : IFileDialogService
             _ => UnsavedChangesResult.Cancel
         };
     }
+
+    public async Task<bool> PromptCrashRecoveryAsync(int snapshotCount)
+    {
+        var root = _getXamlRoot();
+        if (root is null)
+        {
+            return false;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Crash Recovery",
+            Content = $"MyPad discovered {snapshotCount} unsaved document(s) from a previous session that was not closed normally.\n\nDo you want to recover them?",
+            PrimaryButtonText = "Recover",
+            CloseButtonText = "Discard",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = root
+        };
+
+        var result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary;
+    }
+
+    public async Task<ExternalChangeChoice> PromptExternalChangeConflictAsync(string fileName)
+    {
+        var root = _getXamlRoot();
+        if (root is null)
+        {
+            return ExternalChangeChoice.KeepLocal;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "File Modified Externally",
+            Content = $"\"{fileName}\" has been modified by another program.\n\nDo you want to reload the file from disk (discarding local changes), or keep your local changes?",
+            PrimaryButtonText = "Reload",
+            CloseButtonText = "Keep Local",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = root
+        };
+
+        var result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary
+            ? ExternalChangeChoice.Reload
+            : ExternalChangeChoice.KeepLocal;
+    }
 }
