@@ -212,6 +212,22 @@
                                     <ToggleMenuFlyoutItem Text="Status Bar"
                                                           IsChecked="{x:Bind ViewModel.IsStatusBarVisible, Mode=OneWay}"
                                                           Command="{x:Bind ViewModel.ToggleStatusBarCommand}" />
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem Text="Toggle Preview (Split)"
+                                                    Command="{x:Bind ViewModel.TogglePreviewCommand}">
+                                        <MenuFlyoutItem.KeyboardAccelerators>
+                                            <KeyboardAccelerator Key="P" Modifiers="Menu" />
+                                        </MenuFlyoutItem.KeyboardAccelerators>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="Editor Only"
+                                                    Command="{x:Bind ViewModel.SetViewModeCommand}"
+                                                    CommandParameter="Editor" />
+                                    <MenuFlyoutItem Text="Split View"
+                                                    Command="{x:Bind ViewModel.SetViewModeCommand}"
+                                                    CommandParameter="Split" />
+                                    <MenuFlyoutItem Text="Preview Only"
+                                                    Command="{x:Bind ViewModel.SetViewModeCommand}"
+                                                    CommandParameter="Preview" />
                                 </MenuFlyoutSubItem>
 
                                 <MenuFlyoutSubItem Text="Theme">
@@ -258,20 +274,45 @@
             </TabView.TabItemTemplate>
         </TabView>
 
-        <!-- Row 2: Active Editor Content -->
+        <!-- Row 2: Editor / Split / Markdown Preview -->
         <Grid Grid.Row="2">
-            <controls:EditorHost x:Name="ActiveEditor"
-                                 DataContext="{x:Bind ViewModel.SelectedTab, Mode=OneWay}"
-                                 Visibility="{x:Bind BoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <controls:FindReplaceBar x:Name="FindBar"
-                                     TargetEditor="{x:Bind ActiveEditor, Mode=OneWay}" />
+            <!-- Column 0: Editor Host -->
+            <Grid Grid.Column="0"
+                  Visibility="{x:Bind BoolToVisibility(ViewModel.IsEditorVisible), Mode=OneWay}">
+                <controls:EditorHost x:Name="ActiveEditor"
+                                     DataContext="{x:Bind ViewModel.SelectedTab, Mode=OneWay}"
+                                     Visibility="{x:Bind BoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
 
-            <TextBlock Text="No Open Document"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Style="{StaticResource SubtitleTextBlockStyle}"
-                       Visibility="{x:Bind InvertedBoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
+                <controls:FindReplaceBar x:Name="FindBar"
+                                         TargetEditor="{x:Bind ActiveEditor, Mode=OneWay}" />
+
+                <TextBlock Text="No Open Document"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Visibility="{x:Bind InvertedBoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
+            </Grid>
+
+            <!-- Column 1: Separator between Editor and Preview -->
+            <Border Grid.Column="1"
+                    Width="1"
+                    Background="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Visibility="{x:Bind BoolToVisibility(ViewModel.IsSplitterVisible), Mode=OneWay}"
+                    VerticalAlignment="Stretch" />
+
+            <!-- Column 2: Markdown Live Preview Pane -->
+            <Grid Grid.Column="2"
+                  Visibility="{x:Bind BoolToVisibility(ViewModel.IsPreviewVisible), Mode=OneWay}">
+                <controls:MarkdownPreviewPane x:Name="MarkdownPreview"
+                                              MarkdownText="{x:Bind ViewModel.SelectedTab.Content, Mode=OneWay}"
+                                              CurrentTheme="{x:Bind ViewModel.AppTheme, Mode=OneWay}" />
+            </Grid>
         </Grid>
 
         <!-- Row 3: StatusBar -->
@@ -302,6 +343,15 @@
                     <TextBlock Text="{x:Bind ViewModel.SelectedTab.ZoomDisplayName, Mode=OneWay}"
                                VerticalAlignment="Center"
                                FontSize="12" />
+
+                    <!-- View Mode Toggle Button (Editor / Split / Preview) -->
+                    <Button Content="{x:Bind ViewModel.ViewModeDisplayName, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.TogglePreviewCommand}"
+                            ToolTipService.ToolTip="Switch View Mode: Editor / Split / Preview (Alt+P)"
+                            FontSize="12"
+                            Padding="8,2,8,2"
+                            BorderThickness="0"
+                            Background="Transparent" />
 
                     <!-- Line Ending Menu -->
                     <DropDownButton Content="{x:Bind ViewModel.SelectedTab.LineEndingDisplayName, Mode=OneWay}"

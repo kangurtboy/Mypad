@@ -1,9 +1,9 @@
 # Implementation Status
 
-**Current stage:** Phase 5 — Markdown  
+**Current stage:** Phase 6 — Themes  
 **Last updated:** 2026-11-04
 
-This repository contains the architecture, core domain models, infrastructure services, and test suite. Phase 0 (Foundation), Phase 1 (UI Foundation), Phase 2 (Core Editor), Phase 3 (Tabs and session), and Phase 4 (Data protection) are completed. Implementation of Markdig syntax highlighting, live split preview, and scroll synchronization (Phase 5) is next.
+This repository contains the architecture, core domain models, infrastructure services, and test suite. Phase 0 (Foundation), Phase 1 (UI Foundation), Phase 2 (Core Editor), Phase 3 (Tabs and session), Phase 4 (Data protection), and Phase 5 (Markdown) are completed. Implementation of independent editor themes, custom theme JSON schema, and built-in palettes (Phase 6) is next.
 
 ## Completed
 - [x] Product name and scope established.
@@ -44,8 +44,14 @@ This repository contains the architecture, core domain models, infrastructure se
   - External-change detection: detects when open files are modified outside MyPad (silent reload for pristine tabs, conflict prompt for dirty tabs).
   - Safe writes: atomic replace with temp files and directory creation.
   - Backup retention: automated backups on save via `IBackupService` with configurable 5-version retention pruning.
+- [x] Phase 5 Markdown:
+  - Markdig pipeline with GitHub Flavored Markdown (tables, task lists, autolinks, emphasis extras) and disabled raw HTML.
+  - Token syntax highlighting in `EditorHost` for Headers, Bold, and inline Code.
+  - Live preview with debounced updates using `MarkdownPreviewPane`.
+  - Resizable split view layout (`Editor Only`, `Split View`, `Preview Only`) toggleable via `Alt+P` or View menu.
+  - Strict Content Security Policy (CSP) and blocked scripts on `WebView2`.
 
 ## Pending
-- [ ] Phase 5 — Markdown (Markdig syntax highlighting, live preview, split view, scroll sync).
+- [ ] Phase 6 — Themes (Independent app and editor themes, palettes, JSON schema).
 
 Update this file honestly after each milestone.

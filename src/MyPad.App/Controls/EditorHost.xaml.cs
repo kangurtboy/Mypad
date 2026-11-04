@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +13,7 @@ public sealed partial class EditorHost : UserControl
 {
     private const double BaseFontSize = 14.0;
     private bool _isUpdatingInternally;
+    private readonly DispatcherTimer _highlightTimer;
 
     public static readonly DependencyProperty TabViewModelProperty =
         DependencyProperty.Register(
@@ -33,6 +35,13 @@ public sealed partial class EditorHost : UserControl
 
         EditBox.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(OnEditBoxKeyDown), true);
         EditBox.AddHandler(UIElement.PointerWheelChangedEvent, new PointerEventHandler(OnPointerWheelChanged), true);
+
+        _highlightTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _highlightTimer.Tick += (s, e) =>
+        {
+            _highlightTimer.Stop();
+            HighlightMarkdownTokens();
+        };
     }
 
     public DocumentTabViewModel? TabViewModel
@@ -75,6 +84,8 @@ public sealed partial class EditorHost : UserControl
             EditBox.TextWrapping = vm.IsWordWrapEnabled ? TextWrapping.Wrap : TextWrapping.NoWrap;
             ApplyZoom(vm.ZoomLevel);
             UpdateCaretPosition();
+            _highlightTimer.Stop();
+            _highlightTimer.Start();
         }
         finally
         {
@@ -157,6 +168,8 @@ public sealed partial class EditorHost : UserControl
         }
 
         UpdateCaretPosition();
+        _highlightTimer.Stop();
+        _highlightTimer.Start();
     }
 
     private void OnSelectionChanged(object sender, RoutedEventArgs e)
@@ -251,6 +264,56 @@ public sealed partial class EditorHost : UserControl
                     }
                 }
             }
+        }
+    }
+
+    private void HighlightMarkdownTokens()
+    {
+        if (TabViewModel is null || !TabViewModel.IsMarkdown || TabViewModel.Content.Length > 1_000_000)
+        {
+            return;
+        }
+
+        var doc = EditBox.Document;
+        doc.BeginUndoGroup();
+        try
+        {
+            doc.GetText(TextGetOptions.None, out var text);
+            if (string.IsNullOrEmpty(text)) return;
+
+            // Reset formatting on the full document to default
+            var fullRange = doc.GetRange(0, text.Length);
+            fullRange.CharacterFormat.Bold = FormatEffect.Off;
+            fullRange.CharacterFormat.Italic = FormatEffect.Off;
+
+            // Highlight Markdown Headers (# Header)
+            var headerMatches = Regex.Matches(text, @"^(#{1,6}\s+.*)$", RegexOptions.Multiline);
+            foreach (Match m in headerMatches)
+            {
+                var r = doc.GetRange(m.Index, m.Index + m.Length);
+                r.CharacterFormat.Bold = FormatEffect.On;
+            }
+
+            // Highlight Bold (**text**)
+            var boldMatches = Regex.Matches(text, @"\*\*(.+?)\*\*");
+            foreach (Match m in boldMatches)
+            {
+                var r = doc.GetRange(m.Index, m.Index + m.Length);
+                r.CharacterFormat.Bold = FormatEffect.On;
+            }
+
+            // Highlight Inline Code (`code`)
+            var codeMatches = Regex.Matches(text, @"`([^`]+?)`");
+            foreach (Match m in codeMatches)
+            {
+                var r = doc.GetRange(m.Index, m.Index + m.Length);
+                r.CharacterFormat.ForegroundColor = Windows.UI.Color.FromArgb(255, 209, 154, 102);
+            }
+        }
+        catch { }
+        finally
+        {
+            doc.EndUndoGroup();
         }
     }
 }

@@ -74,6 +74,11 @@ public sealed class DocumentTabViewModel : ObservableObject
 
     public string HeaderTitle => IsModified ? $"{FileName} *" : FileName;
 
+    public bool IsMarkdown =>
+        Kind == DocumentKind.Markdown ||
+        FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+        FileName.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
+
     public string Content
     {
         get => _content;

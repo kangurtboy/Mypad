@@ -59,6 +59,8 @@ public sealed class MainViewModel : ObservableObject
         ToggleWordWrapCommand = new RelayCommand(ToggleWordWrap, () => SelectedTab is not null);
         ToggleStatusBarCommand = new RelayCommand(ToggleStatusBar);
         ToggleAutosaveCommand = new RelayCommand(ToggleAutosave);
+        TogglePreviewCommand = new RelayCommand(TogglePreview);
+        SetViewModeCommand = new RelayCommand<string>(SetViewMode);
         SetThemeCommand = new RelayCommand<string>(SetTheme);
         NextTabCommand = new RelayCommand(SelectNextTab, () => Tabs.Count > 1);
         PreviousTabCommand = new RelayCommand(SelectPreviousTab, () => Tabs.Count > 1);
@@ -109,6 +111,35 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _isStatusBarVisible, value);
     }
 
+    private MarkdownViewMode _viewMode = MarkdownViewMode.EditorOnly;
+
+    public MarkdownViewMode ViewMode
+    {
+        get => _viewMode;
+        set
+        {
+            if (SetProperty(ref _viewMode, value))
+            {
+                OnPropertyChanged(nameof(IsEditorVisible));
+                OnPropertyChanged(nameof(IsPreviewVisible));
+                OnPropertyChanged(nameof(IsSplitterVisible));
+                OnPropertyChanged(nameof(ViewModeDisplayName));
+            }
+        }
+    }
+
+    public bool IsEditorVisible => ViewMode != MarkdownViewMode.PreviewOnly;
+    public bool IsPreviewVisible => ViewMode != MarkdownViewMode.EditorOnly;
+    public bool IsSplitterVisible => ViewMode == MarkdownViewMode.SplitView;
+
+    public string ViewModeDisplayName => ViewMode switch
+    {
+        MarkdownViewMode.EditorOnly => "Editor Only",
+        MarkdownViewMode.SplitView => "Split View",
+        MarkdownViewMode.PreviewOnly => "Preview Only",
+        _ => "Editor Only"
+    };
+
     public bool IsAutosaveEnabled
     {
         get => _isAutosaveEnabled;
@@ -138,6 +169,8 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ToggleWordWrapCommand { get; }
     public RelayCommand ToggleStatusBarCommand { get; }
     public RelayCommand ToggleAutosaveCommand { get; }
+    public RelayCommand TogglePreviewCommand { get; }
+    public RelayCommand<string> SetViewModeCommand { get; }
     public RelayCommand<string> SetThemeCommand { get; }
     public RelayCommand NextTabCommand { get; }
     public RelayCommand PreviousTabCommand { get; }
@@ -630,6 +663,26 @@ public sealed class MainViewModel : ObservableObject
     private void ToggleAutosave()
     {
         IsAutosaveEnabled = !IsAutosaveEnabled;
+    }
+
+    private void TogglePreview()
+    {
+        ViewMode = ViewMode switch
+        {
+            MarkdownViewMode.EditorOnly => MarkdownViewMode.SplitView,
+            MarkdownViewMode.SplitView => MarkdownViewMode.PreviewOnly,
+            _ => MarkdownViewMode.EditorOnly
+        };
+    }
+
+    private void SetViewMode(string? mode)
+    {
+        ViewMode = mode switch
+        {
+            "Split" => MarkdownViewMode.SplitView,
+            "Preview" => MarkdownViewMode.PreviewOnly,
+            _ => MarkdownViewMode.EditorOnly
+        };
     }
 
     private void SetTheme(string? theme)

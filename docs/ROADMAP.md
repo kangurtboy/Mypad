@@ -49,12 +49,12 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 - [x] 4.6. Backup retention.
 
 ## Phase 5 — Markdown
-- [ ] 5.1. Markdig integration.
-- [ ] 5.2. Syntax highlighting.
-- [ ] 5.3. Live preview.
-- [ ] 5.4. Split view.
-- [ ] 5.5. Safe preview policy.
-- [ ] 5.6. Scroll synchronization.
+- [x] 5.1. Markdig integration.
+- [x] 5.2. Syntax highlighting.
+- [x] 5.3. Live preview.
+- [x] 5.4. Split view.
+- [x] 5.5. Safe preview policy.
+- [x] 5.6. Scroll synchronization.
 
 ## Phase 6 — Themes
 - [ ] 6.1. Independent app/editor themes.
