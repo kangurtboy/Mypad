@@ -307,12 +307,23 @@ public sealed class MainViewModel : ObservableObject
             return false;
         }
 
-        var suggestedName = string.IsNullOrEmpty(SelectedTab.FileName) ? "Untitled.txt" : SelectedTab.FileName;
-        var destination = await _fileDialogService.PickSaveFileAsync(suggestedName);
+        bool preferMarkdown = SelectedTab.IsMarkdown || SelectedTab.HasMarkdownFormatting();
+        var suggestedName = string.IsNullOrEmpty(SelectedTab.FileName) ? "Untitled" : SelectedTab.FileName;
+        var destination = await _fileDialogService.PickSaveFileAsync(suggestedName, preferMarkdown);
 
         if (string.IsNullOrWhiteSpace(destination))
         {
             return false;
+        }
+
+        if (destination.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+            destination.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
+        {
+            SelectedTab.Kind = DocumentKind.Markdown;
+        }
+        else
+        {
+            SelectedTab.Kind = DocumentKind.PlainText;
         }
 
         var doc = SelectedTab.ToDomainModel();

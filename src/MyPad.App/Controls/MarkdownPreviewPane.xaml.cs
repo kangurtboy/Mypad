@@ -106,14 +106,20 @@ public sealed partial class MarkdownPreviewPane : UserControl
 
     private void OnNavigationStarting(WebView2 sender, CoreWebView2NavigationStartingEventArgs args)
     {
-        // Cancel navigation if user clicked an external link and launch in system browser
-        if (args.Uri != null && !args.Uri.StartsWith("about:blank", StringComparison.OrdinalIgnoreCase))
+        // Allow internal navigation (empty, data: URLs from NavigateToString, about:blank)
+        if (string.IsNullOrEmpty(args.Uri) ||
+            args.Uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase) ||
+            args.Uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        // Only intercept genuine HTTP / HTTPS web links and open in system browser
+        if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
             args.Cancel = true;
-            if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var uri))
-            {
-                _ = Launcher.LaunchUriAsync(uri);
-            }
+            _ = Launcher.LaunchUriAsync(uri);
         }
     }
 

@@ -16,7 +16,7 @@ public enum ExternalChangeChoice
 public interface IFileDialogService
 {
     Task<string?> PickOpenFileAsync();
-    Task<string?> PickSaveFileAsync(string defaultFileName = "Untitled.txt");
+    Task<string?> PickSaveFileAsync(string defaultFileName = "Untitled.txt", bool preferMarkdown = false);
     Task<UnsavedChangesResult> PromptUnsavedChangesAsync(string fileName);
     Task<bool> PromptCrashRecoveryAsync(int snapshotCount);
     Task<ExternalChangeChoice> PromptExternalChangeConflictAsync(string fileName);

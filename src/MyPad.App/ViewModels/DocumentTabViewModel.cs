@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using MyPad.App.Common;
 using MyPad.Core.Enums;
 using MyPad.Core.Models;
@@ -77,7 +78,32 @@ public sealed class DocumentTabViewModel : ObservableObject
     public bool IsMarkdown =>
         Kind == DocumentKind.Markdown ||
         FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-        FileName.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
+        FileName.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase) ||
+        HasMarkdownFormatting();
+
+    public bool HasMarkdownFormatting()
+    {
+        if (string.IsNullOrWhiteSpace(Content)) return false;
+
+        // Headers
+        if (Regex.IsMatch(Content, @"^(#{1,6}\s+)", RegexOptions.Multiline)) return true;
+        // Fenced code blocks
+        if (Regex.IsMatch(Content, @"^```", RegexOptions.Multiline)) return true;
+        // Bold or italic
+        if (Regex.IsMatch(Content, @"(\*\*|__)[^\s].*?\1")) return true;
+        // Inline code
+        if (Regex.IsMatch(Content, @"`[^`\n]+`")) return true;
+        // Tables
+        if (Regex.IsMatch(Content, @"^\|(.+)\|", RegexOptions.Multiline)) return true;
+        // Blockquotes
+        if (Regex.IsMatch(Content, @"^>\s+", RegexOptions.Multiline)) return true;
+        // Task lists or bullet lists
+        if (Regex.IsMatch(Content, @"^(\s*[-*+]\s+\[[ xX]\]|\s*[-*+]\s+|\s*\d+\.\s+)", RegexOptions.Multiline)) return true;
+        // Links or images
+        if (Regex.IsMatch(Content, @"!?\[.*?\]\(.*?\)")) return true;
+
+        return false;
+    }
 
     public string Content
     {

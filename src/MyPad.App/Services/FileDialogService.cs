@@ -37,17 +37,33 @@ public sealed class FileDialogService : IFileDialogService
         return file?.Path;
     }
 
-    public async Task<string?> PickSaveFileAsync(string defaultFileName = "Untitled.txt")
+    public async Task<string?> PickSaveFileAsync(string defaultFileName = "Untitled.txt", bool preferMarkdown = false)
     {
         var picker = new FileSavePicker();
         var hwnd = _getWindowHandle();
         InitializeWithWindow.Initialize(picker, hwnd);
 
         picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-        picker.SuggestedFileName = defaultFileName;
-        picker.FileTypeChoices.Add("Plain Text (*.txt)", new List<string> { ".txt" });
-        picker.FileTypeChoices.Add("Markdown Document (*.md)", new List<string> { ".md" });
-        picker.FileTypeChoices.Add("All Files (*.*)", new List<string> { "." });
+
+        string baseName = Path.GetFileNameWithoutExtension(defaultFileName);
+        if (string.IsNullOrWhiteSpace(baseName)) baseName = "Untitled";
+
+        if (preferMarkdown)
+        {
+            picker.SuggestedFileName = $"{baseName}.md";
+            picker.DefaultFileExtension = ".md";
+            picker.FileTypeChoices.Add("Markdown Document (*.md)", new List<string> { ".md" });
+            picker.FileTypeChoices.Add("Plain Text (*.txt)", new List<string> { ".txt" });
+            picker.FileTypeChoices.Add("All Files (*.*)", new List<string> { "." });
+        }
+        else
+        {
+            picker.SuggestedFileName = $"{baseName}.txt";
+            picker.DefaultFileExtension = ".txt";
+            picker.FileTypeChoices.Add("Plain Text (*.txt)", new List<string> { ".txt" });
+            picker.FileTypeChoices.Add("Markdown Document (*.md)", new List<string> { ".md" });
+            picker.FileTypeChoices.Add("All Files (*.*)", new List<string> { "." });
+        }
 
         var file = await picker.PickSaveFileAsync();
         return file?.Path;
