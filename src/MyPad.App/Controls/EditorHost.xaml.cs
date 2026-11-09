@@ -121,8 +121,22 @@ public sealed partial class EditorHost : UserControl
             {
                 newVm.PropertyChanged += host.OnVmPropertyChanged;
                 host.LoadDocumentFromViewModel(newVm);
+                host.DispatcherQueue.TryEnqueue(() => host.FocusEditor());
             }
         }
+    }
+
+    public void FocusEditor()
+    {
+        EditBox.Focus(FocusState.Programmatic);
+        EditBox.Document.GetText(TextGetOptions.None, out var text);
+        int pos = text.Length;
+        if (text.EndsWith("\r", StringComparison.Ordinal))
+        {
+            pos--;
+        }
+        pos = Math.Max(0, pos);
+        EditBox.Document.Selection.SetRange(pos, pos);
     }
 
     private void OnEditBoxLoaded(object sender, RoutedEventArgs e)
@@ -131,6 +145,7 @@ public sealed partial class EditorHost : UserControl
         {
             LoadDocumentFromViewModel(TabViewModel);
         }
+        DispatcherQueue.TryEnqueue(() => FocusEditor());
     }
 
     private void LoadDocumentFromViewModel(DocumentTabViewModel vm)

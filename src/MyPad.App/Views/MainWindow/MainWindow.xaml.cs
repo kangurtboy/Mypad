@@ -37,8 +37,23 @@ public sealed partial class MainWindow : Window
         ApplyTitleBarTheme(ViewModel.AppTheme);
         UpdateWindowTitle();
 
+        try
+        {
+            string iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "MyPad.ico");
+            if (System.IO.File.Exists(iconPath))
+            {
+                AppWindow.SetIcon(iconPath);
+            }
+        }
+        catch { }
+
         // Restore previous session and check for crash recovery
         _ = InitializeSessionAndRecoveryAsync();
+
+        DocTabView.SelectionChanged += (s, e) =>
+        {
+            DispatcherQueue.TryEnqueue(() => ActiveEditor.FocusEditor());
+        };
 
         // Monitor external file changes when window is focused
         Activated += async (s, e) =>
@@ -168,6 +183,7 @@ public sealed partial class MainWindow : Window
     private void OnAddTabButtonClick(TabView sender, object args)
     {
         ViewModel.NewTabCommand.Execute(null);
+        DispatcherQueue.TryEnqueue(() => ActiveEditor.FocusEditor());
     }
 
     private void OnTabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)

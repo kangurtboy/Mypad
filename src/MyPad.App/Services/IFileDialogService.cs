@@ -13,6 +13,13 @@ public enum ExternalChangeChoice
     KeepLocal
 }
 
+public enum MarkdownSaveChoice
+{
+    SaveAsMarkdown,
+    KeepPlainText,
+    Cancel
+}
+
 public interface IFileDialogService
 {
     Task<string?> PickOpenFileAsync();
@@ -20,4 +27,5 @@ public interface IFileDialogService
     Task<UnsavedChangesResult> PromptUnsavedChangesAsync(string fileName);
     Task<bool> PromptCrashRecoveryAsync(int snapshotCount);
     Task<ExternalChangeChoice> PromptExternalChangeConflictAsync(string fileName);
+    Task<MarkdownSaveChoice> PromptMarkdownConversionAsync(string fileName);
 }

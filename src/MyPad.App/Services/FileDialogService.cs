@@ -142,4 +142,32 @@ public sealed class FileDialogService : IFileDialogService
             ? ExternalChangeChoice.Reload
             : ExternalChangeChoice.KeepLocal;
     }
+
+    public async Task<MarkdownSaveChoice> PromptMarkdownConversionAsync(string fileName)
+    {
+        var root = _getXamlRoot();
+        if (root is null)
+        {
+            return MarkdownSaveChoice.KeepPlainText;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Markdown Formatting Detected",
+            Content = $"\"{fileName}\" contains Markdown formatting (headers, bold, lists, or code).\n\nDo you want to save it as a Markdown file (.md) or keep it as plain text (.txt)?",
+            PrimaryButtonText = "Save as Markdown (.md)",
+            SecondaryButtonText = "Keep as Plain Text (.txt)",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = root
+        };
+
+        var result = await dialog.ShowAsync();
+        return result switch
+        {
+            ContentDialogResult.Primary => MarkdownSaveChoice.SaveAsMarkdown,
+            ContentDialogResult.Secondary => MarkdownSaveChoice.KeepPlainText,
+            _ => MarkdownSaveChoice.Cancel
+        };
+    }
 }

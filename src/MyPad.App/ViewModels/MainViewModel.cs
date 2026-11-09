@@ -274,16 +274,35 @@ public sealed class MainViewModel : ObservableObject
             return await SaveCurrentFileAsAsync();
         }
 
+        // Check if user added Markdown formatting to an existing .txt file
+        string targetPath = SelectedTab.FilePath;
+        if (targetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) &&
+            SelectedTab.HasMarkdownFormatting() &&
+            _fileDialogService is not null)
+        {
+            var choice = await _fileDialogService.PromptMarkdownConversionAsync(SelectedTab.FileName);
+            if (choice == MarkdownSaveChoice.Cancel)
+            {
+                return false;
+            }
+
+            if (choice == MarkdownSaveChoice.SaveAsMarkdown)
+            {
+                targetPath = Path.ChangeExtension(targetPath, ".md");
+                SelectedTab.Kind = DocumentKind.Markdown;
+            }
+        }
+
         var doc = SelectedTab.ToDomainModel();
 
         // 1. Safe write
-        await _documentFileService.SaveAsync(doc, SelectedTab.FilePath);
+        await _documentFileService.SaveAsync(doc, targetPath);
 
         // 2. Backup creation & retention pruning
         try
         {
-            await _backupService.CreateBackupAsync(SelectedTab.FilePath);
-            await _backupService.PruneBackupsAsync(SelectedTab.FilePath, maxBackups: 5);
+            await _backupService.CreateBackupAsync(targetPath);
+            await _backupService.PruneBackupsAsync(targetPath, maxBackups: 5);
         }
         catch { }
 
@@ -308,8 +327,11 @@ public sealed class MainViewModel : ObservableObject
         }
 
         bool preferMarkdown = SelectedTab.IsMarkdown || SelectedTab.HasMarkdownFormatting();
-        var suggestedName = string.IsNullOrEmpty(SelectedTab.FileName) ? "Untitled" : SelectedTab.FileName;
-        var destination = await _fileDialogService.PickSaveFileAsync(suggestedName, preferMarkdown);
+        var baseName = string.IsNullOrEmpty(SelectedTab.FileName) || SelectedTab.FileName.StartsWith("Untitled")
+            ? "Untitled"
+            : Path.GetFileNameWithoutExtension(SelectedTab.FileName);
+
+        var destination = await _fileDialogService.PickSaveFileAsync(baseName, preferMarkdown);
 
         if (string.IsNullOrWhiteSpace(destination))
         {

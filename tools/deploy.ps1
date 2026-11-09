@@ -37,7 +37,13 @@ if (!(Test-Path $installDir)) {
 # Copy all output files into installation directory
 Copy-Item -Path "$buildOut\*" -Destination $installDir -Recurse -Force
 
+$assetsSource = Join-Path $projectDir "src\MyPad.App\Assets"
+if (Test-Path $assetsSource) {
+    Copy-Item -Path $assetsSource -Destination $installDir -Recurse -Force
+}
+
 $installedExe = Join-Path $installDir "MyPad.App.exe"
+$installedIco = Join-Path $installDir "Assets\MyPad.ico"
 
 # 4. Create/update Start Menu Shortcut
 $startMenuDir = [Environment]::GetFolderPath([Environment+SpecialFolder]::Programs)
@@ -49,7 +55,11 @@ $shortcut = $wsh.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = $installedExe
 $shortcut.WorkingDirectory = $installDir
 $shortcut.Description = "MyPad - Lightweight native Windows text editor"
-$shortcut.IconLocation = "$installedExe,0"
+if (Test-Path $installedIco) {
+    $shortcut.IconLocation = "$installedIco,0"
+} else {
+    $shortcut.IconLocation = "$installedExe,0"
+}
 $shortcut.Save()
 
 # 5. Register in Windows App Paths (for Win+R 'mypad')

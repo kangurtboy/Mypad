@@ -38,11 +38,20 @@
                         VerticalAlignment="Center"
                         Margin="12,0,0,0"
                         Spacing="8">
-                <FontIcon Glyph="&#xE8A5;"
-                          FontSize="13"
-                          VerticalAlignment="Center"
-                          Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                          Opacity="0.85" />
+                <!-- Custom MyPad Notebook Brand Icon -->
+                <Viewbox Width="15" Height="15" VerticalAlignment="Center">
+                    <Canvas Width="20" Height="20">
+                        <!-- Notebook Cover -->
+                        <Rectangle Width="16" Height="19" Canvas.Left="2" Canvas.Top="0.5" RadiusX="2.5" RadiusY="2.5" Fill="#2563EB" />
+                        <!-- Spine Band -->
+                        <Rectangle Width="3.5" Height="19" Canvas.Left="2" Canvas.Top="0.5" RadiusX="1" RadiusY="1" Fill="#1E40AF" />
+                        <!-- Golden Ribbon Bookmark -->
+                        <Path Data="M 10 0.5 L 10 9 L 11.5 7.5 L 13 9 L 13 0.5 Z" Fill="#F59E0B" />
+                        <!-- Clean Page Accents -->
+                        <Rectangle Width="7" Height="1.5" Canvas.Left="8" Canvas.Top="11" RadiusX="0.75" RadiusY="0.75" Fill="#93C5FD" Opacity="0.9" />
+                        <Rectangle Width="5" Height="1.5" Canvas.Left="8" Canvas.Top="14.5" RadiusX="0.75" RadiusY="0.75" Fill="#93C5FD" Opacity="0.9" />
+                    </Canvas>
+                </Viewbox>
                 <TextBlock x:Name="TitleTextBlock"
                            Text="MyPad"
                            VerticalAlignment="Center"
