@@ -185,6 +185,55 @@
                                             <KeyboardAccelerator Key="H" Modifiers="Control" />
                                         </MenuFlyoutItem.KeyboardAccelerators>
                                     </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutSubItem Text="Format">
+                                        <ToggleMenuFlyoutItem Text="Visual WYSIWYG Mode (No symbols)"
+                                                              IsChecked="{x:Bind ViewModel.IsVisualWysiwygMode, Mode=OneWay}"
+                                                              Command="{x:Bind ViewModel.ToggleFormattingModeCommand}" />
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem Text="Bold" Click="OnBoldMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE8DD;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Italic" Click="OnItalicMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE8DB;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Underline" Click="OnUnderlineMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE8DC;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Strikethrough" Click="OnStrikethroughMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xEDE0;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Inline Code" Click="OnInlineCodeMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE943;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Text="Link" Click="OnLinkMenuClick">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE71B;" />
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutSubItem Text="Headings">
+                                            <MenuFlyoutItem Text="Heading 1 (# )" Click="OnH1MenuClick" />
+                                            <MenuFlyoutItem Text="Heading 2 (## )" Click="OnH2MenuClick" />
+                                            <MenuFlyoutItem Text="Heading 3 (### )" Click="OnH3MenuClick" />
+                                        </MenuFlyoutSubItem>
+                                        <MenuFlyoutSeparator />
+                                        <MenuFlyoutItem Text="Quote (> )" Click="OnQuoteMenuClick" />
+                                        <MenuFlyoutItem Text="Bullet List (- )" Click="OnBulletListMenuClick" />
+                                        <MenuFlyoutItem Text="Numbered List (1. )" Click="OnNumberedListMenuClick" />
+                                        <MenuFlyoutItem Text="Task List (- [ ] )" Click="OnTaskListMenuClick" />
+                                        <MenuFlyoutItem Text="Code Block (```)" Click="OnCodeBlockMenuClick" />
+                                    </MenuFlyoutSubItem>
                                 </MenuFlyoutSubItem>
 
                                 <MenuFlyoutSubItem Text="View">
@@ -328,16 +377,18 @@
         <!-- Row 2: Editor / Split / Markdown Preview -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
+                <ColumnDefinition x:Name="EditorCol" Width="*" />
+                <ColumnDefinition x:Name="SplitterCol" Width="0" />
+                <ColumnDefinition x:Name="PreviewCol" Width="0" />
             </Grid.ColumnDefinitions>
 
             <!-- Column 0: Editor Host -->
             <Grid Grid.Column="0"
+                  Background="Transparent"
                   Visibility="{x:Bind BoolToVisibility(ViewModel.IsEditorVisible), Mode=OneWay}">
                 <controls:EditorHost x:Name="ActiveEditor"
                                      DataContext="{x:Bind ViewModel.SelectedTab, Mode=OneWay}"
+                                     Theme="{x:Bind ViewModel.CurrentEditorTheme, Mode=OneWay}"
                                      Visibility="{x:Bind BoolToVisibility(ViewModel.HasSelectedTab), Mode=OneWay}" />
 
                 <controls:FindReplaceBar x:Name="FindBar"
@@ -394,6 +445,15 @@
                     <TextBlock Text="{x:Bind ViewModel.SelectedTab.ZoomDisplayName, Mode=OneWay}"
                                VerticalAlignment="Center"
                                FontSize="12" />
+
+                    <!-- Formatting Mode Toggle Button (WYSIWYG / Markdown) -->
+                    <Button Content="{x:Bind ViewModel.FormattingModeDisplayName, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.ToggleFormattingModeCommand}"
+                            ToolTipService.ToolTip="Switch Mode: WYSIWYG (no symbols) / Markdown (with symbols)"
+                            FontSize="12"
+                            Padding="8,2,8,2"
+                            BorderThickness="0"
+                            Background="Transparent" />
 
                     <!-- View Mode Toggle Button (Editor / Split / Preview) -->
                     <Button Content="{x:Bind ViewModel.ViewModeDisplayName, Mode=OneWay}"

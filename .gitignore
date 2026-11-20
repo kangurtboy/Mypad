@@ -39,6 +39,10 @@ appsettings.Local.json
 Thumbs.db
 Desktop.ini
 
+# Build and Release output
+publish/
+dist/
+
 # Test output
 TestResults/
 coverage/

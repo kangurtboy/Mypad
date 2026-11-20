@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (e.g. v0.1.0)'
+        default: 'v0.1.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Release Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run Tests
+        run: dotnet test -c Release
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress
+
+      - name: Publish MyPad.App (Self-Contained x64)
+        run: dotnet publish src/MyPad.App/MyPad.App.csproj -c Release -r win-x64 --self-contained -o publish/win-x64
+
+      - name: Build Inno Setup Installer
+        run: |
+          mkdir -p dist
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/MyPadSetup.iss
+
+      - name: Create Portable ZIP
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}"
+          if ([string]::IsNullOrWhiteSpace($ver) -or $ver.StartsWith("refs/")) {
+            $ver = "${{ inputs.tag_name }}"
+          }
+          if ([string]::IsNullOrWhiteSpace($ver)) {
+            $ver = "v0.1.0"
+          }
+          Compress-Archive -Path "publish/win-x64/*" -DestinationPath "dist/MyPad-$ver-win-x64-portable.zip" -Force
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypad-release-assets
+          path: dist/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ github.ref_name || inputs.tag_name }}
+          name: MyPad ${{ github.ref_name || inputs.tag_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            dist/*.exe
+            dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

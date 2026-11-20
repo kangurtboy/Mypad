@@ -68,6 +68,8 @@ public sealed class MainViewModel : ObservableObject
         ToggleStatusBarCommand = new RelayCommand(ToggleStatusBar);
         ToggleAutosaveCommand = new RelayCommand(ToggleAutosave);
         TogglePreviewCommand = new RelayCommand(TogglePreview);
+        ToggleFormattingModeCommand = new RelayCommand(ToggleFormattingMode);
+        SetFormattingModeCommand = new RelayCommand<string>(SetFormattingMode);
         SetViewModeCommand = new RelayCommand<string>(SetViewMode);
         SetThemeCommand = new RelayCommand<string>(SetTheme);
         SetEditorPaletteCommand = new RelayCommand<string>(palette =>
@@ -85,7 +87,14 @@ public sealed class MainViewModel : ObservableObject
 
         // Data protection timer: takes recovery snapshots of dirty tabs & executes autosave if enabled
         _protectionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
-        _protectionTimer.Tick += async (s, e) => await OnProtectionTimerTickAsync();
+        _protectionTimer.Tick += async (s, e) =>
+        {
+            try
+            {
+                await OnProtectionTimerTickAsync();
+            }
+            catch { }
+        };
         _protectionTimer.Start();
 
         // Initial blank tab (can be replaced by session restore or crash recovery)
@@ -155,6 +164,31 @@ public sealed class MainViewModel : ObservableObject
         _ => "Editor Only"
     };
 
+    private EditorFormattingMode _formattingMode = EditorFormattingMode.VisualWysiwyg;
+
+    public EditorFormattingMode FormattingMode
+    {
+        get => _formattingMode;
+        set
+        {
+            if (SetProperty(ref _formattingMode, value))
+            {
+                OnPropertyChanged(nameof(IsVisualWysiwygMode));
+                OnPropertyChanged(nameof(FormattingModeDisplayName));
+                if (SelectedTab != null)
+                {
+                    SelectedTab.FormattingMode = value;
+                }
+            }
+        }
+    }
+
+    public bool IsVisualWysiwygMode => FormattingMode == EditorFormattingMode.VisualWysiwyg;
+
+    public string FormattingModeDisplayName => FormattingMode == EditorFormattingMode.VisualWysiwyg
+        ? "Format: WYSIWYG"
+        : "Format: Markdown";
+
     public bool IsAutosaveEnabled
     {
         get => _isAutosaveEnabled;
@@ -188,6 +222,8 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand ToggleStatusBarCommand { get; }
     public RelayCommand ToggleAutosaveCommand { get; }
     public RelayCommand TogglePreviewCommand { get; }
+    public RelayCommand ToggleFormattingModeCommand { get; }
+    public RelayCommand<string> SetFormattingModeCommand { get; }
     public RelayCommand<string> SetViewModeCommand { get; }
     public RelayCommand<string> SetThemeCommand { get; }
     public RelayCommand NextTabCommand { get; }
@@ -197,6 +233,8 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand<string> SetEditorPaletteCommand { get; }
 
     public event EventHandler? NewWindowRequested;
+    public event EventHandler? CloseWindowRequested;
+    public Action? BeforeSave;
 
     private void RequestNewWindow()
     {
@@ -269,6 +307,8 @@ public sealed class MainViewModel : ObservableObject
             return false;
         }
 
+        BeforeSave?.Invoke();
+
         if (string.IsNullOrEmpty(SelectedTab.FilePath))
         {
             return await SaveCurrentFileAsAsync();
@@ -325,6 +365,8 @@ public sealed class MainViewModel : ObservableObject
         {
             return false;
         }
+
+        BeforeSave?.Invoke();
 
         bool preferMarkdown = SelectedTab.IsMarkdown || SelectedTab.HasMarkdownFormatting();
         var baseName = string.IsNullOrEmpty(SelectedTab.FileName) || SelectedTab.FileName.StartsWith("Untitled")
@@ -409,7 +451,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (Tabs.Count == 0)
         {
-            CreateNewTab();
+            CloseWindowRequested?.Invoke(this, EventArgs.Empty);
         }
         else if (SelectedTab == tab)
         {
@@ -610,6 +652,8 @@ public sealed class MainViewModel : ObservableObject
 
     private async Task OnProtectionTimerTickAsync()
     {
+        BeforeSave?.Invoke();
+
         // 1. Take recovery snapshots for all dirty tabs
         foreach (var tab in Tabs)
         {
@@ -667,7 +711,7 @@ public sealed class MainViewModel : ObservableObject
         SelectedTab = Tabs[prevIndex];
     }
 
-    private void UpdateCommandsState()
+    public void UpdateCommandsState()
     {
         NextTabCommand.RaiseCanExecuteChanged();
         PreviousTabCommand.RaiseCanExecuteChanged();
@@ -737,6 +781,20 @@ public sealed class MainViewModel : ObservableObject
         };
     }
 
+    private void ToggleFormattingMode()
+    {
+        FormattingMode = FormattingMode == EditorFormattingMode.VisualWysiwyg
+            ? EditorFormattingMode.MarkdownSyntax
+            : EditorFormattingMode.VisualWysiwyg;
+    }
+
+    private void SetFormattingMode(string? mode)
+    {
+        FormattingMode = string.Equals(mode, "Markdown", StringComparison.OrdinalIgnoreCase)
+            ? EditorFormattingMode.MarkdownSyntax
+            : EditorFormattingMode.VisualWysiwyg;
+    }
+
     private void SetTheme(string? theme)
     {
         AppTheme = theme switch
@@ -746,13 +804,33 @@ public sealed class MainViewModel : ObservableObject
             _ => ElementTheme.Default
         };
 
-        if (theme == "Light" && CurrentEditorTheme.Appearance == "dark")
+        if (theme == "Light")
         {
-            _themeService.SetEditorTheme("Default Light");
+            if (CurrentEditorTheme.Appearance != "light")
+            {
+                _themeService.SetEditorTheme("Default Light");
+            }
         }
-        else if (theme == "Dark" && CurrentEditorTheme.Appearance == "light")
+        else if (theme == "Dark")
         {
-            _themeService.SetEditorTheme("Default Dark");
+            if (CurrentEditorTheme.Appearance != "dark")
+            {
+                _themeService.SetEditorTheme("Default Dark");
+            }
+        }
+        else
+        {
+            bool isOsLight = false;
+            try
+            {
+                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                if (key != null && key.GetValue("AppsUseLightTheme") is int intVal && intVal == 1)
+                {
+                    isOsLight = true;
+                }
+            }
+            catch { }
+            _themeService.SetEditorTheme(isOsLight ? "Default Light" : "Default Dark");
         }
     }
 

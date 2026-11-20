@@ -81,8 +81,8 @@ Exit criteria: a reproducible build and evidence-backed editor decision.
 
 ## Phase 9 — Release
 - [ ] 9.1. MSIX packaging.
-- [ ] 9.2. EXE installer.
-- [ ] 9.3. Portable mode decision.
-- [ ] 9.4. Upgrade/uninstall tests.
-- [ ] 9.5. Release notes.
-- [ ] 9.6. GitHub release.
+- [x] 9.2. EXE installer (Inno Setup 6 x64 self-contained installer).
+- [x] 9.3. Portable mode (Standalone ZIP distribution).
+- [x] 9.4. Upgrade/uninstall tests.
+- [x] 9.5. Release notes.
+- [x] 9.6. GitHub release (Automated CI/CD release workflow).

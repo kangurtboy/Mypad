@@ -14,6 +14,22 @@ MyPad aims to combine the simplicity of Windows Notepad with reliable tabs, cras
 - Separate application and editor themes.
 - Offline-first, local-only operation.
 
+## Installation
+
+Download the latest version from the [**GitHub Releases**](https://github.com/kangurtboy/Mypad/releases) page:
+
+1. **Installer (`MyPad-v0.1.0-Setup-x64.exe`)**:
+   - Modern setup wizard with automatic desktop & start menu shortcuts.
+   - Registers Windows Explorer context menu (*"Открыть в MyPad"* / *"Edit with MyPad"*).
+   - Associates `.txt`, `.md`, `.markdown`, `.log` files.
+   - Enables `Win+R mypad` quick-launch.
+   - Clean uninstaller included.
+
+2. **Portable ZIP (`MyPad-v0.1.0-win-x64-portable.zip`)**:
+   - Zero-install standalone archive. Extract anywhere and launch `MyPad.App.exe`.
+
+---
+
 ## Current status
 **Planning / foundation stage.** This repository contains the product specification, agent instructions, architecture notes, decision records, and project scaffolding. The editor engine and Windows SDK baseline must pass the Phase 0 prototype before the production UI is built.
 
@@ -46,6 +62,24 @@ The exact .NET SDK, Windows App SDK, Windows SDK, and minimum Windows build must
 
 ## Security and privacy
 MyPad must not require an account, upload documents, include advertising SDKs, or enable hidden telemetry. Markdown preview treats content as untrusted input and must not execute scripts or automatically load remote resources.
+
+## Building from source
+Prerequisites: .NET 8.0 SDK, Windows App SDK, and Windows 10/11 (x64).
+
+```powershell
+# Clone repository
+git clone https://github.com/kangurtboy/Mypad.git
+cd Mypad
+
+# Run automated tests
+dotnet test
+
+# Build release artifacts (Installer + Portable ZIP)
+powershell -ExecutionPolicy Bypass -File .\tools\build-release.ps1
+
+# Or 1-click install/update on local PC
+powershell -ExecutionPolicy Bypass -File .\tools\deploy.ps1
+```
 
 ## Contributing
 Follow `AGENTS.md`. Keep changes small, tested, documented, and compatible with the supported Windows matrix.

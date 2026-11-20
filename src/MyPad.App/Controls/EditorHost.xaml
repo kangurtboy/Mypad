@@ -6,11 +6,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="Transparent">
+    <Grid x:Name="RootGrid"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <RichEditBox x:Name="EditBox"
                      BorderThickness="0"
-                     Padding="12,8,12,8"
-                     Background="Transparent"
+                     Padding="16,12,16,24"
+                     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
                      IsSpellCheckEnabled="False"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"
@@ -21,16 +22,114 @@
                      SelectionChanged="OnSelectionChanged"
                      TextChanged="OnTextChanged"
                      Loaded="OnEditBoxLoaded">
+            <RichEditBox.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Text="Cut" Click="OnCutContextClick">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8C6;" />
+                        </MenuFlyoutItem.Icon>
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="X" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Text="Copy" Click="OnCopyContextClick">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE8C8;" />
+                        </MenuFlyoutItem.Icon>
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="C" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Text="Paste" Click="OnPasteContextClick">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE77F;" />
+                        </MenuFlyoutItem.Icon>
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="V" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Text="Select All" Click="OnSelectAllContextClick">
+                        <MenuFlyoutItem.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="A" Modifiers="Control" />
+                        </MenuFlyoutItem.KeyboardAccelerators>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutSubItem Text="Format">
+                        <MenuFlyoutItem Text="Bold" Click="OnBoldClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8DD;" />
+                            </MenuFlyoutItem.Icon>
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="B" Modifiers="Control" />
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Italic" Click="OnItalicClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8DB;" />
+                            </MenuFlyoutItem.Icon>
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="I" Modifiers="Control" />
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Underline" Click="OnUnderlineClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8DC;" />
+                            </MenuFlyoutItem.Icon>
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="U" Modifiers="Control" />
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Strikethrough" Click="OnStrikethroughClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xEDE0;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Inline Code" Click="OnInlineCodeClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE943;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Link" Click="OnLinkClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE71B;" />
+                            </MenuFlyoutItem.Icon>
+                            <MenuFlyoutItem.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="K" Modifiers="Control" />
+                            </MenuFlyoutItem.KeyboardAccelerators>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutSubItem Text="Headings">
+                            <MenuFlyoutItem Text="Heading 1 (# )" Click="OnH1Click" />
+                            <MenuFlyoutItem Text="Heading 2 (## )" Click="OnH2Click" />
+                            <MenuFlyoutItem Text="Heading 3 (### )" Click="OnH3Click" />
+                        </MenuFlyoutSubItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem Text="Quote (> )" Click="OnQuoteClick" />
+                        <MenuFlyoutItem Text="Bullet List (- )" Click="OnBulletListClick" />
+                        <MenuFlyoutItem Text="Numbered List (1. )" Click="OnNumberedListClick" />
+                        <MenuFlyoutItem Text="Task List (- [ ] )" Click="OnTaskListClick" />
+                        <MenuFlyoutItem Text="Code Block (```)" Click="OnCodeBlockClick" />
+                    </MenuFlyoutSubItem>
+                </MenuFlyout>
+            </RichEditBox.ContextFlyout>
             <RichEditBox.Resources>
-                <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
-                <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
-                <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
-                <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="Transparent" />
+                <!-- Background Brushes: solid matching theme -->
+                <StaticResource x:Key="TextControlBackground" ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                <StaticResource x:Key="TextControlBackgroundPointerOver" ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                <StaticResource x:Key="TextControlBackgroundFocused" ResourceKey="ApplicationPageBackgroundThemeBrush" />
+                <StaticResource x:Key="TextControlBackgroundDisabled" ResourceKey="ApplicationPageBackgroundThemeBrush" />
+
+                <!-- Border Brushes: strictly transparent in all states -->
                 <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent" />
                 <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent" />
                 <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent" />
                 <Thickness x:Key="TextControlBorderThemeThickness">0</Thickness>
                 <Thickness x:Key="TextControlBorderThemeThicknessFocused">0</Thickness>
+
+                <!-- Foreground Brushes: adapt dynamically to system and editor palette -->
+                <StaticResource x:Key="TextControlForeground" ResourceKey="TextFillColorPrimaryBrush" />
+                <StaticResource x:Key="TextControlForegroundPointerOver" ResourceKey="TextFillColorPrimaryBrush" />
+                <StaticResource x:Key="TextControlForegroundFocused" ResourceKey="TextFillColorPrimaryBrush" />
             </RichEditBox.Resources>
         </RichEditBox>
     </Grid>

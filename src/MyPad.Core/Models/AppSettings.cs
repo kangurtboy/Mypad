@@ -22,7 +22,9 @@ public class AppSettings
 
     public bool InsertSpacesForTabs { get; set; } = true;
 
-    // Markdown
+    // Markdown & Formatting
+    public EditorFormattingMode FormattingMode { get; set; } = EditorFormattingMode.VisualWysiwyg;
+
     public bool MarkdownLivePreview { get; set; } = true;
 
     public bool MarkdownSyncScroll { get; set; } = true;

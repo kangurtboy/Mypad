@@ -75,6 +75,27 @@ public sealed class DocumentTabViewModel : ObservableObject
 
     public string HeaderTitle => IsModified ? $"{FileName} *" : FileName;
 
+    private EditorFormattingMode _formattingMode = EditorFormattingMode.VisualWysiwyg;
+
+    public EditorFormattingMode FormattingMode
+    {
+        get => _formattingMode;
+        set
+        {
+            if (SetProperty(ref _formattingMode, value))
+            {
+                OnPropertyChanged(nameof(IsVisualWysiwyg));
+                OnPropertyChanged(nameof(FormattingModeDisplayName));
+            }
+        }
+    }
+
+    public bool IsVisualWysiwyg => FormattingMode == EditorFormattingMode.VisualWysiwyg;
+
+    public string FormattingModeDisplayName => FormattingMode == EditorFormattingMode.VisualWysiwyg
+        ? "WYSIWYG"
+        : "Markdown";
+
     public bool IsMarkdown =>
         Kind == DocumentKind.Markdown ||
         FileName.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
@@ -105,16 +126,18 @@ public sealed class DocumentTabViewModel : ObservableObject
         return false;
     }
 
+    private string? _rtfContent;
+
+    public string? RtfContent
+    {
+        get => _rtfContent;
+        set => SetProperty(ref _rtfContent, value);
+    }
+
     public string Content
     {
         get => _content;
-        set
-        {
-            if (SetProperty(ref _content, value))
-            {
-                IsModified = true;
-            }
-        }
+        set => SetProperty(ref _content, value);
     }
 
     public bool IsModified

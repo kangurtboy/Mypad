@@ -39,7 +39,18 @@ public class ThemeService : IThemeService
         LoadBuiltInThemes();
         LoadCustomThemes();
 
-        _currentTheme = _themes.First(t => t.Name == "Default Dark");
+        bool isOsLight = false;
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            if (key != null && key.GetValue("AppsUseLightTheme") is int intVal && intVal == 1)
+            {
+                isOsLight = true;
+            }
+        }
+        catch { }
+
+        _currentTheme = _themes.First(t => t.Name == (isOsLight ? "Default Light" : "Default Dark"));
     }
 
     public IReadOnlyList<EditorTheme> GetAvailableEditorThemes() => _themes.AsReadOnly();

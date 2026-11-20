@@ -13,7 +13,16 @@ public sealed partial class MainWindow : Window
     public Visibility BoolToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InvertedBoolToVisibility(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
 
-    public MainWindow()
+    public MainWindow() : this((IReadOnlyList<string>?)null)
+    {
+    }
+
+    public MainWindow(string? initialFilePath)
+        : this(string.IsNullOrWhiteSpace(initialFilePath) ? null : new[] { initialFilePath })
+    {
+    }
+
+    public MainWindow(IReadOnlyList<string>? initialFilePaths)
     {
         InitializeComponent();
 
@@ -29,12 +38,18 @@ public sealed partial class MainWindow : Window
             AppServices.RecoveryService,
             AppServices.BackupService);
 
+        ViewModel.BeforeSave = () => ActiveEditor?.SaveDocumentToViewModel(ViewModel.SelectedTab);
+
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1050, 680));
 
         // Seamless integrated title bar (only AppTitleBar acts as the window drag/caption area)
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         ApplyTitleBarTheme(ViewModel.AppTheme);
+        if (Content is FrameworkElement rootElem)
+        {
+            rootElem.RequestedTheme = ViewModel.AppTheme;
+        }
         UpdateWindowTitle();
 
         try
@@ -47,8 +62,8 @@ public sealed partial class MainWindow : Window
         }
         catch { }
 
-        // Restore previous session and check for crash recovery
-        _ = InitializeSessionAndRecoveryAsync();
+        // Restore previous session and check for crash recovery or open initial file(s)
+        _ = InitializeSessionAndRecoveryAsync(initialFilePaths);
 
         DocTabView.SelectionChanged += (s, e) =>
         {
@@ -70,6 +85,15 @@ public sealed partial class MainWindow : Window
             var newWindow = new MainWindow();
             newWindow.Activate();
         };
+
+        // Close window when all tabs are closed
+        ViewModel.CloseWindowRequested += (s, e) =>
+        {
+            Close();
+        };
+
+        // Initialize layout for view mode
+        UpdateViewModeColumns(ViewModel.ViewMode);
 
         // Persist session state on close
         Closed += async (s, e) =>
@@ -103,7 +127,11 @@ public sealed partial class MainWindow : Window
 
         ViewModel.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(MainViewModel.AppTheme))
+            if (e.PropertyName == nameof(MainViewModel.ViewMode))
+            {
+                UpdateViewModeColumns(ViewModel.ViewMode);
+            }
+            else if (e.PropertyName == nameof(MainViewModel.AppTheme))
             {
                 if (Content is FrameworkElement root)
                 {
@@ -129,10 +157,64 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    private async Task InitializeSessionAndRecoveryAsync()
+    private void UpdateViewModeColumns(MyPad.Core.Enums.MarkdownViewMode mode)
     {
-        await ViewModel.RestoreSessionAsync();
-        await ViewModel.CheckForCrashRecoveryAsync();
+        switch (mode)
+        {
+            case MyPad.Core.Enums.MarkdownViewMode.EditorOnly:
+                EditorCol.Width = new GridLength(1, GridUnitType.Star);
+                SplitterCol.Width = new GridLength(0);
+                PreviewCol.Width = new GridLength(0);
+                break;
+            case MyPad.Core.Enums.MarkdownViewMode.PreviewOnly:
+                EditorCol.Width = new GridLength(0);
+                SplitterCol.Width = new GridLength(0);
+                PreviewCol.Width = new GridLength(1, GridUnitType.Star);
+                break;
+            case MyPad.Core.Enums.MarkdownViewMode.SplitView:
+                EditorCol.Width = new GridLength(1, GridUnitType.Star);
+                SplitterCol.Width = GridLength.Auto;
+                PreviewCol.Width = new GridLength(1, GridUnitType.Star);
+                break;
+        }
+    }
+
+    private async Task InitializeSessionAndRecoveryAsync(IReadOnlyList<string>? initialFilePaths)
+    {
+        try
+        {
+            if (initialFilePaths is { Count: > 0 })
+            {
+                ViewModel.Tabs.Clear();
+                foreach (var path in initialFilePaths)
+                {
+                    if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                    {
+                        try
+                        {
+                            var doc = await AppServices.DocumentFileService.OpenAsync(path);
+                            var tab = new DocumentTabViewModel(doc);
+                            ViewModel.Tabs.Add(tab);
+                        }
+                        catch { }
+                    }
+                }
+
+                if (ViewModel.Tabs.Count > 0)
+                {
+                    ViewModel.SelectedTab = ViewModel.Tabs[0];
+                    ViewModel.UpdateCommandsState();
+                    UpdateWindowTitle();
+                    ActiveEditor.FocusEditor();
+                    return;
+                }
+            }
+
+            await ViewModel.RestoreSessionAsync();
+            await ViewModel.CheckForCrashRecoveryAsync();
+            ActiveEditor.FocusEditor();
+        }
+        catch { }
     }
 
     private void UpdateWindowTitle()
@@ -268,6 +350,21 @@ public sealed partial class MainWindow : Window
     {
         ActiveEditor.SelectAll();
     }
+
+    private void OnBoldMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertBold();
+    private void OnItalicMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertItalic();
+    private void OnUnderlineMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertUnderline();
+    private void OnStrikethroughMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertStrikethrough();
+    private void OnInlineCodeMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertInlineCode();
+    private void OnLinkMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertLink();
+    private void OnH1MenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertH1();
+    private void OnH2MenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertH2();
+    private void OnH3MenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertH3();
+    private void OnQuoteMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertQuote();
+    private void OnBulletListMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertBulletList();
+    private void OnNumberedListMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertNumberedList();
+    private void OnTaskListMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertTaskList();
+    private void OnCodeBlockMenuClick(object sender, RoutedEventArgs e) => ActiveEditor.InsertCodeBlock();
 
     private void OnFindClick(object sender, RoutedEventArgs e)
     {
