@@ -31,9 +31,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Run Tests
-        run: |
-          dotnet test tests/MyPad.Core.Tests/MyPad.Core.Tests.csproj -c Release
-          dotnet test tests/MyPad.Infrastructure.Tests/MyPad.Infrastructure.Tests.csproj -c Release
+        run: dotnet test MyPad.sln -c Release
 
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
