@@ -31,18 +31,36 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Run Tests
-        run: dotnet test -c Release
+        run: |
+          dotnet test tests/MyPad.Core.Tests/MyPad.Core.Tests.csproj -c Release
+          dotnet test tests/MyPad.Infrastructure.Tests/MyPad.Infrastructure.Tests.csproj -c Release
 
       - name: Install Inno Setup
-        run: choco install innosetup --no-progress
+        run: choco install innosetup -y --no-progress
 
       - name: Publish MyPad.App (Self-Contained x64)
         run: dotnet publish src/MyPad.App/MyPad.App.csproj -c Release -r win-x64 --self-contained -o publish/win-x64
 
       - name: Build Inno Setup Installer
+        shell: pwsh
         run: |
-          mkdir -p dist
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/MyPadSetup.iss
+          if (!(Test-Path dist)) { New-Item -ItemType Directory -Path dist -Force | Out-Null }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue)?.Source
+          if (-not $iscc) {
+            $candidates = @(
+              "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+              "C:\Program Files\Inno Setup 6\ISCC.exe",
+              "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
+            )
+            foreach ($c in $candidates) {
+              if (Test-Path $c) { $iscc = $c; break }
+            }
+          }
+          if (-not $iscc) {
+            throw "ISCC.exe not found!"
+          }
+          Write-Host "Using ISCC: $iscc"
+          & $iscc installer/MyPadSetup.iss
 
       - name: Create Portable ZIP
         shell: pwsh
